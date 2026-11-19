@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>فروست — غرف الدردشة الصوتية</title>
+<title>صدى — غرف الدردشة الصوتية</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=El+Messiri:wght@500;600;700&family=Sora:wght@400;600;700;800&family=Cinzel:wght@700;900&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="app/styles.css" />
@@ -13,6 +13,12 @@
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 </head>
 <body>
+<script>
+  try {
+    const sadaSession = JSON.parse(localStorage.getItem("sada.supabase.session") || "null");
+    if (!sadaSession || !sadaSession.access_token) window.location.replace("/");
+  } catch (_) { window.location.replace("/"); }
+</script>
 <div id="root"></div>
 <script type="text/babel" src="app/ui.jsx"></script>
 <script type="text/babel" src="app/party.jsx"></script>
@@ -158,7 +164,7 @@ function App() {
             {stack.map((pg, i) => <div key={i + pg.p} style={{ position: 'absolute', inset: 0, zIndex: 60 + i, display: i === stack.length - 1 ? 'block' : 'none' }}>{renderPage(pg)}</div>)}
             {room && !roomMin && <RoomPage key={room.id} room={room} onClose={() => setRoom(null)} onMinimize={() => setRoomMin(true)} onUser={(id) => { setRoomMin(true); userGo(id); }} />}
             {toastMsg && <div key={toastMsg.k} className="toast">{toastMsg.t}</div>}
-            <div className="splash"><div style={{ textAlign: 'center' }}><div className="splash-logo"><Ic n="snow" s={58} c="#fff" w={1.6} /></div><div style={{ fontFamily: 'var(--display)', fontWeight: 700, fontSize: 30, color: '#fff', marginTop: 14, textShadow: '0 2px 8px rgba(0,40,120,.4)' }}>فروست</div><div style={{ color: '#E3F0FF', fontSize: 13 }}>غرف دردشة صوتية</div></div></div>
+            <div className="splash"><div style={{ textAlign: 'center' }}><div className="splash-logo"><Ic n="snow" s={58} c="#fff" w={1.6} /></div><div style={{ fontFamily: 'var(--display)', fontWeight: 700, fontSize: 30, color: '#fff', marginTop: 14, textShadow: '0 2px 8px rgba(0,40,120,.4)' }}>صدى</div><div style={{ color: '#E3F0FF', fontSize: 13 }}>غرف دردشة صوتية</div></div></div>
           </div>
         </div>
       </div>
