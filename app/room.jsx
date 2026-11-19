@@ -2,7 +2,8 @@
 
 function GiftSheet({ open, onClose, targets, onSend }) {
   const { coins } = useApp();
-  const [sel, setSel] = useState(GIFTS[0].id);
+  const [sel, setSel] = useState(GIFTS[0]?.id ?? null);
+  useEffect(() => { if (!sel && GIFTS.length) setSel(GIFTS[0].id); }, [sel, GIFTS.length]);
   const [qty, setQty] = useState(1);
   const [to, setTo] = useState(0);
   const [tab, setTab] = useState('hot');
@@ -25,6 +26,7 @@ function GiftSheet({ open, onClose, targets, onSend }) {
         {[['hot', 'شائع'], ['lux', 'فاخر'], ['cheap', 'مميز']].map(([id, n]) => <button key={id} onClick={() => setTab(id)} style={{ color: tab === id ? '#fff' : '#7E9BCB', fontWeight: 700, fontSize: 15, borderBottom: tab === id ? '2px solid #FFD45A' : '2px solid transparent', paddingBottom: 4 }}>{n}</button>)}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6, padding: '6px 10px', maxHeight: 230, overflowY: 'auto' }}>
+        {list.length === 0 && <div style={{ gridColumn: '1 / -1', padding: 24, textAlign: 'center', color: '#9EC3FF' }}>لا توجد هدايا متاحة حالياً. أضف الهدايا من لوحة الإدارة.</div>}
         {list.map(x => (
           <button key={x.id} onClick={() => setSel(x.id)} style={{ borderRadius: 12, padding: '10px 2px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, background: sel === x.id ? 'rgba(120,180,255,.18)' : 'transparent', boxShadow: sel === x.id ? 'inset 0 0 0 1.5px #78B4FF' : 'none' }}>
             <GiftArt g={x} s={44} />
@@ -40,7 +42,7 @@ function GiftSheet({ open, onClose, targets, onSend }) {
           <select value={qty} onChange={e => setQty(+e.target.value)} style={{ background: 'transparent', color: '#fff', border: 'none', padding: '0 10px', fontFamily: 'var(--latin)', fontWeight: 700, outline: 'none' }}>
             {[1, 10, 66, 99, 520].map(n => <option key={n} value={n} style={{ color: '#000' }}>×{n}</option>)}
           </select>
-          <button onClick={() => onSend(g, qty, targets ? targets[to] : null)} className="press" style={{ padding: '9px 22px', fontWeight: 800, color: '#5A3600', background: 'linear-gradient(180deg,#FFE9A0,#F0B23A)' }}>إرسال</button>
+          <button disabled={!g} onClick={() => g && onSend(g, qty, targets ? targets[to] : null)} className="press" style={{ padding: '9px 22px', fontWeight: 800, color: '#5A3600', background: 'linear-gradient(180deg,#FFE9A0,#F0B23A)', opacity: g ? 1 : .45 }}>إرسال</button>
         </div>
       </div>
     </Sheet>
@@ -91,26 +93,7 @@ function RoomPage({ room, onClose, onMinimize, onUser }) {
   const followed = followedRooms.includes(room.id);
   const online = room.count + (mySeat ? 1 : 0) + 1;
 
-  // simulated speaking + chatter
-  useEffect(() => {
-    const t = setInterval(() => {
-      const sp = {};
-      seats.forEach((s, i) => { if (s && s !== 'locked' && !s.muted && Math.random() > .55) sp[i] = true; });
-      if (Math.random() > .5) sp.host = true;
-      if (mySeat !== null && micOn && Math.random() > .6) sp.me = true;
-      setSpeaking(sp);
-    }, 900);
-    return () => clearInterval(t);
-  }, [seats, mySeat, micOn]);
-  useEffect(() => {
-    if (isMine) return;
-    const t = setInterval(() => {
-      const u = pool[Math.floor(Math.random() * pool.length)];
-      if (!u) return;
-      setMsgs(m => [...m.slice(-60), { u, text: CHAT_LINES[Math.floor(Math.random() * CHAT_LINES.length)] }]);
-    }, 3400);
-    return () => clearInterval(t);
-  }, [pool]);
+  // Speaking indicators and chat messages are driven by real room events; no fake activity is generated.
   useEffect(() => { if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight; }, [msgs.length]);
 
   const sendMsg = () => { if (!txt.trim()) return; setMsgs(m => [...m, { u: me, text: txt.trim(), mine: true }]); setTxt(''); };
