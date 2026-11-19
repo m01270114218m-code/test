@@ -184,33 +184,62 @@ function VipPage({ onBack }) {
 }
 
 /* ---------- Store ---------- */
-const STORE = {
-  frame: [['إطار الجليد', 'ice', 2000], ['إطار ذهبي', 'gold', 5000], ['إطار ملكي', 'violet', 8000], ['إطار الورد', 'rose', 3000]],
-  car: [['زلاجة الجليد', 'car', 6000], ['صاروخ', 'rocket', 12000], ['قلعة متحركة', 'castle', 20000], ['تاج طائر', 'crown', 9000]],
-  bubble: [['فقاعة ثلجية', 'chat', 1500], ['فقاعة ذهبية', 'star', 2500], ['فقاعة الماس', 'diamond', 4000]],
-  id: [['888888', 'id', 50000], ['1010101', 'id', 30000], ['777000', 'id', 40000], ['2026', 'id', 90000]],
-};
 function StorePage({ onBack, initial = 'frame' }) {
-  const { coins, setCoins, owned, setOwned, toast, me } = useApp();
+  const { coins, diamonds, toast, me } = useApp();
   const [tab, setTab] = useState(initial);
-  const tabs = [['frame', 'الإطارات'], ['car', 'السيارات'], ['bubble', 'الفقاعات'], ['id', 'مميز ID']];
-  const buy = (key, price) => { if (owned.includes(key)) return toast('تملكه بالفعل'); if (coins < price) return toast('رصيد غير كافٍ'); setCoins(coins - price); setOwned([...owned, key]); toast('تم الشراء بنجاح'); };
+  const [busyKey, setBusyKey] = useState('');
+  const categories = [
+    ['frame', 'الإطارات'], ['entrance', 'الدخوليات'], ['page_element', 'فقاعات وعناصر'],
+    ['room_background', 'خلفيات الغرف'], ['banner', 'البنرات'], ['icon', 'الأيقونات']
+  ];
+  const registry = window.SADA_ASSETS?.all() || {};
+  const items = Object.entries(registry).map(([asset_key, value]) => ({ asset_key, ...value }))
+    .filter(item => item.category === tab);
+  const inventory = window.SADA_DATA?.inventory || [];
+  const purchase = async item => {
+    const price = Number(item.metadata?.price || 0);
+    if (price <= 0) return toast('هذا الأصل غير معروض للبيع. عدّل سعره من لوحة الإدارة.');
+    setBusyKey(item.asset_key);
+    try {
+      await window.SADA_API.rpc('purchase_asset', { p_asset_key: item.asset_key });
+      await window.SADA_API.refresh();
+      toast('تم شراء الأصل وإضافته إلى مقتنياتك');
+    } catch (error) { toast(error instanceof Error ? error.message : 'تعذر شراء الأصل'); }
+    finally { setBusyKey(''); }
+  };
+  const equip = async item => {
+    setBusyKey(item.asset_key);
+    try {
+      await window.SADA_API.rpc('equip_asset', { p_asset_key: item.asset_key });
+      await window.SADA_API.refresh();
+      toast('تم تجهيز الأصل على حسابك');
+    } catch (error) { toast(error instanceof Error ? error.message : 'تعذر تجهيز الأصل'); }
+    finally { setBusyKey(''); }
+  };
   return (
     <div className="page">
-      <PageHeader title="المتجر" onBack={onBack} right={<span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--latin)', fontWeight: 700, color: '#14326E', fontSize: 13 }}><Coin s={16} />{fmt(coins)}</span>} />
+      <PageHeader title="المتجر والأصول" onBack={onBack} right={<span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--latin)', fontWeight: 700, color: '#14326E', fontSize: 13 }}><Coin s={16} />{fmt(coins)} · {fmt(diamonds)} ♦</span>} />
       <div style={{ display: 'flex', gap: 8, padding: '6px 14px 10px', overflowX: 'auto' }} className="noscroll">
-        {tabs.map(([id, n]) => <Chip key={id} on={tab === id} onClick={() => setTab(id)}>{n}</Chip>)}
+        {categories.map(([id, name]) => <Chip key={id} on={tab === id} onClick={() => setTab(id)}>{name}</Chip>)}
       </div>
       <div className="page-body" style={{ padding: '0 14px 20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, alignContent: 'start' }}>
-        {STORE[tab].map(([n, k, p]) => {
-          const key = tab + n; const own = owned.includes(key);
+        {items.length === 0 && <div style={{ gridColumn: '1 / -1', padding: 24, textAlign: 'center', color: '#6B7EA7' }}>لا توجد أصول في هذا القسم حالياً. ارفع الأصول وحدد أسعارها من لوحة الإدارة.</div>}
+        {items.map(item => {
+          const own = inventory.some(x => x.item_id === item.asset_key && x.item_type === item.category);
+          const price = Number(item.metadata?.price || 0);
+          const currency = item.metadata?.currency === 'diamonds' ? 'diamonds' : 'coins';
           return (
-            <div key={key} className="card" style={{ padding: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-              <div style={{ height: 96, width: '100%', borderRadius: 12, background: 'linear-gradient(160deg,#EAF4FF,#CFE3FB)', display: 'grid', placeItems: 'center' }}>
-                {tab === 'frame' ? <Avatar name={me.name} hue={me.hue} size={64} frame={k} /> : tab === 'id' ? <span className="pretty-id">{n}</span> : <GiftArt g={{ ic: k, c: ['#E3F1FF', '#2F6FD6'] }} s={60} />}
+            <div key={item.asset_key} className="card" style={{ padding: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+              <div style={{ height: 100, width: '100%', borderRadius: 12, background: 'linear-gradient(160deg,#EAF4FF,#CFE3FB)', display: 'grid', placeItems: 'center', overflow: 'hidden' }}>
+                {item.mime_type?.startsWith('image/') ? <img src={item.url} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> :
+                  item.mime_type?.startsWith('video/') ? <video src={item.url} muted loop autoPlay playsInline style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> :
+                  item.mime_type?.startsWith('audio/') ? <audio src={item.url} controls /> :
+                  <Ic n="sparkles" s={38} c="#3479C9" />}
               </div>
-              <b style={{ color: '#14326E', fontSize: 14 }}>{tab === 'id' ? 'ID ' + n : n}</b>
-              <button onClick={() => buy(key, p)} className="press" style={{ width: '100%', padding: '7px 0', borderRadius: 14, fontWeight: 700, fontSize: 13, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 4, color: own ? '#3B82E6' : '#fff', background: own ? '#E3EFFF' : 'linear-gradient(180deg,#6AB4FF,#2F74E0)', fontFamily: 'var(--latin)' }}>{own ? 'مملوك' : <><Coin s={14} />{fmt(p)}</>}</button>
+              <b style={{ color: '#14326E', fontSize: 13, textAlign: 'center' }}>{item.title || item.asset_key}</b>
+              <code style={{ color: '#7B8DB5', fontSize: 9 }}>{item.asset_key}</code>
+              {own ? <button disabled={busyKey === item.asset_key} onClick={() => void equip(item)} className="press" style={{ width: '100%', padding: '7px 0', borderRadius: 14, fontWeight: 700, fontSize: 12, color: '#1E5D9D', background: '#E3EFFF' }}>{busyKey === item.asset_key ? 'جارٍ التنفيذ…' : 'تجهيز الأصل'}</button> :
+                <button disabled={busyKey === item.asset_key || price <= 0} onClick={() => void purchase(item)} className="press" style={{ width: '100%', padding: '7px 0', borderRadius: 14, fontWeight: 700, fontSize: 12, color: '#fff', background: 'linear-gradient(180deg,#6AB4FF,#2F74E0)', opacity: price <= 0 ? .45 : 1 }}>{busyKey === item.asset_key ? 'جارٍ الشراء…' : price > 0 ? fmt(price) + (currency === 'diamonds' ? ' ألماس' : ' عملة') : 'غير معروض للبيع'}</button>}
             </div>
           );
         })}
