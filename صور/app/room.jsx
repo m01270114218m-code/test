@@ -1,0 +1,265 @@
+/* ============ Voice room ============ */
+
+function GiftSheet({ open, onClose, targets, onSend }) {
+  const { coins } = useApp();
+  const [sel, setSel] = useState(GIFTS[0].id);
+  const [qty, setQty] = useState(1);
+  const [to, setTo] = useState(0);
+  const [tab, setTab] = useState('hot');
+  const g = GIFTS.find(x => x.id === sel);
+  const list = tab === 'hot' ? GIFTS : tab === 'lux' ? GIFTS.filter(x => x.p >= 500) : GIFTS.filter(x => x.p < 100);
+  return (
+    <Sheet open={open} onClose={onClose} dark>
+      {targets && targets.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 14px 4px', overflowX: 'auto' }} className="noscroll">
+          <span style={{ color: '#9EC3FF', fontSize: 12, flexShrink: 0 }}>إرسال إلى</span>
+          {targets.map((u, i) => (
+            <button key={u.id} onClick={() => setTo(i)} style={{ position: 'relative', flexShrink: 0, borderRadius: '50%', boxShadow: to === i ? '0 0 0 2px #FFD45A' : 'none' }}>
+              <Avatar name={u.name} hue={u.hue} size={34} />
+              {to === i && <span style={{ position: 'absolute', bottom: -2, left: -2, width: 14, height: 14, borderRadius: 7, background: '#FFD45A', display: 'grid', placeItems: 'center' }}><Ic n="check" s={9} c="#5A3600" w={3} /></span>}
+            </button>
+          ))}
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: 18, padding: '10px 16px 6px' }}>
+        {[['hot', 'شائع'], ['lux', 'فاخر'], ['cheap', 'مميز']].map(([id, n]) => <button key={id} onClick={() => setTab(id)} style={{ color: tab === id ? '#fff' : '#7E9BCB', fontWeight: 700, fontSize: 15, borderBottom: tab === id ? '2px solid #FFD45A' : '2px solid transparent', paddingBottom: 4 }}>{n}</button>)}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6, padding: '6px 10px', maxHeight: 230, overflowY: 'auto' }}>
+        {list.map(x => (
+          <button key={x.id} onClick={() => setSel(x.id)} style={{ borderRadius: 12, padding: '10px 2px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, background: sel === x.id ? 'rgba(120,180,255,.18)' : 'transparent', boxShadow: sel === x.id ? 'inset 0 0 0 1.5px #78B4FF' : 'none' }}>
+            <GiftArt g={x} s={44} />
+            <span style={{ color: '#fff', fontSize: 12 }}>{x.n}</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 3, color: '#FFD45A', fontSize: 11, fontFamily: 'var(--latin)' }}><Coin s={11} />{fmt(x.p)}</span>
+          </button>
+        ))}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px 22px' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#fff', fontFamily: 'var(--latin)', fontWeight: 700 }}><Coin s={18} />{fmt(coins)}</span>
+        <div style={{ flex: 1 }} />
+        <div style={{ display: 'flex', borderRadius: 20, overflow: 'hidden', border: '1px solid #4F7FC8' }}>
+          <select value={qty} onChange={e => setQty(+e.target.value)} style={{ background: 'transparent', color: '#fff', border: 'none', padding: '0 10px', fontFamily: 'var(--latin)', fontWeight: 700, outline: 'none' }}>
+            {[1, 10, 66, 99, 520].map(n => <option key={n} value={n} style={{ color: '#000' }}>×{n}</option>)}
+          </select>
+          <button onClick={() => onSend(g, qty, targets ? targets[to] : null)} className="press" style={{ padding: '9px 22px', fontWeight: 800, color: '#5A3600', background: 'linear-gradient(180deg,#FFE9A0,#F0B23A)' }}>إرسال</button>
+        </div>
+      </div>
+    </Sheet>
+  );
+}
+
+function Seat({ i, occ, speaking, locked, onClick }) {
+  return (
+    <button onClick={onClick} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+      {occ ? (
+        <Avatar name={occ.name} hue={occ.hue} size={54} frame={occ.frame} speaking={speaking} muted={occ.muted} />
+      ) : (
+        <div className="seat-empty">{locked ? <Ic n="lock" s={20} c="#B9D6FF" /> : <Ic n="mic" s={20} c="#B9D6FF" />}</div>
+      )}
+      <span style={{ fontSize: 11, color: occ ? '#fff' : '#9EC3FF', maxWidth: 70, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{occ ? occ.name : (i + 1)}</span>
+      {occ && <span style={{ display: 'flex', alignItems: 'center', gap: 2, fontSize: 9, color: '#FFD9A0', fontFamily: 'var(--latin)', marginTop: -3 }}><Ic n="heart" s={8} c="#FF7FA0" fill="#FF7FA0" w={1} />{fmt(occ.score || 0)}</span>}
+    </button>
+  );
+}
+
+function RoomPage({ room, onClose, onMinimize, onUser }) {
+  const { me, coins, setCoins, followedRooms, toggleFollowRoom, toast, pushLog, setDiamonds, diamonds } = useApp();
+  const owner = room.mine ? { ...me } : userById(room.owner);
+  const isMine = !!room.mine;
+  const pool = useMemo(() => USERS.filter(u => u.id !== room.owner).sort(() => .5 - (room.id % 7) / 7).slice(0, isMine ? 0 : 6), [room.id]);
+  const [seats, setSeats] = useState(() => {
+    const s = Array(8).fill(null);
+    pool.forEach((u, i) => { if (i < 5) s[[0, 1, 3, 4, 6][i]] = { ...u, score: (u.lv * 131) % 900, muted: i === 3 }; });
+    if (!isMine) s[7] = 'locked';
+    return s;
+  });
+  const [hostScore, setHostScore] = useState(isMine ? 0 : 12800);
+  const [mySeat, setMySeat] = useState(isMine ? 'host' : null);
+  const [micOn, setMicOn] = useState(true);
+  const [speakerOn, setSpeakerOn] = useState(true);
+  const [speaking, setSpeaking] = useState({});
+  const [msgs, setMsgs] = useState(() => [
+    { sys: true, text: 'مرحباً بكم في الغرفة. يُرجى الالتزام بالآداب العامة، وأي مخالفة تعرّض صاحبها للحظر.' },
+    { sys: true, text: `${me.name} دخل الغرفة`, join: true },
+  ]);
+  const [txt, setTxt] = useState('');
+  const [giftOpen, setGiftOpen] = useState(false);
+  const [seatMenu, setSeatMenu] = useState(null);
+  const [usersOpen, setUsersOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [fx, setFx] = useState(null);
+  const chatRef = useRef(null);
+  const followed = followedRooms.includes(room.id);
+  const online = room.count + (mySeat ? 1 : 0) + 1;
+
+  // simulated speaking + chatter
+  useEffect(() => {
+    const t = setInterval(() => {
+      const sp = {};
+      seats.forEach((s, i) => { if (s && s !== 'locked' && !s.muted && Math.random() > .55) sp[i] = true; });
+      if (Math.random() > .5) sp.host = true;
+      if (mySeat !== null && micOn && Math.random() > .6) sp.me = true;
+      setSpeaking(sp);
+    }, 900);
+    return () => clearInterval(t);
+  }, [seats, mySeat, micOn]);
+  useEffect(() => {
+    if (isMine) return;
+    const t = setInterval(() => {
+      const u = pool[Math.floor(Math.random() * pool.length)];
+      if (!u) return;
+      setMsgs(m => [...m.slice(-60), { u, text: CHAT_LINES[Math.floor(Math.random() * CHAT_LINES.length)] }]);
+    }, 3400);
+    return () => clearInterval(t);
+  }, [pool]);
+  useEffect(() => { if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight; }, [msgs.length]);
+
+  const sendMsg = () => { if (!txt.trim()) return; setMsgs(m => [...m, { u: me, text: txt.trim(), mine: true }]); setTxt(''); };
+  const takeSeat = (i) => {
+    if (seats[i] === 'locked') return toast('هذا المقعد مقفل');
+    if (seats[i]) return onUser(seats[i].id);
+    if (mySeat === 'host') return toast('أنت المضيف');
+    const s = seats.slice();
+    if (typeof mySeat === 'number') s[mySeat] = null;
+    s[i] = { ...me, score: 0, isMe: true };
+    setSeats(s); setMySeat(i); setSeatMenu(null);
+    setMsgs(m => [...m, { sys: true, text: `${me.name} صعد إلى المقعد ${i + 1}` }]);
+  };
+  const leaveSeat = () => { if (typeof mySeat !== 'number') return; const s = seats.slice(); s[mySeat] = null; setSeats(s); setMySeat(null); };
+  const sendGift = (g, qty, target) => {
+    const cost = g.p * qty;
+    if (coins < cost) { toast('رصيد غير كافٍ — اشحن من المحفظة'); return; }
+    setCoins(coins - cost); pushLog(`هدية ${g.n} ×${qty}`, -cost);
+    const tgt = target || owner;
+    if (tgt.id === owner.id) setHostScore(v => v + cost);
+    else setSeats(s => s.map(x => (x && x !== 'locked' && x.id === tgt.id) ? { ...x, score: (x.score || 0) + cost } : x));
+    if (tgt.id === me.id) setDiamonds(diamonds + cost);
+    setMsgs(m => [...m, { gift: g, qty, to: tgt, u: me }]);
+    setFx({ g, qty, key: Date.now() }); setGiftOpen(false);
+    setTimeout(() => setFx(null), 2200);
+  };
+  const seatedUsers = [owner, ...seats.filter(s => s && s !== 'locked' && !s.isMe)];
+  const audience = USERS.slice(0, Math.min(10, online));
+
+  return (
+    <div className="room" style={{ '--rh': room.hue }}>
+      <div className="room-bg" />
+      <div className="room-snow" />
+      <StatusBar />
+      {/* header */}
+      <div className="room-head">
+        <div className="room-pill">
+          <Cover title={room.name} hue={room.hue} size={38} radius={10} />
+          <div style={{ minWidth: 0 }}>
+            <div style={{ color: '#fff', fontWeight: 700, fontSize: 14, maxWidth: 120, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{room.name}</div>
+            <div style={{ color: '#B9D6FF', fontSize: 10, fontFamily: 'var(--latin)', direction: 'ltr', textAlign: 'right' }}>ID:{room.id}</div>
+          </div>
+          {!isMine && <button className="press" onClick={() => { toggleFollowRoom(room.id); toast(followed ? 'تم إلغاء المتابعة' : 'تمت متابعة الغرفة'); }} style={{ width: 28, height: 28, borderRadius: 14, display: 'grid', placeItems: 'center', background: followed ? 'rgba(255,255,255,.2)' : 'linear-gradient(180deg,#FFD45A,#F09A12)' }}><Ic n={followed ? 'check' : 'plus'} s={15} c="#fff" w={2.8} /></button>}
+        </div>
+        <div style={{ flex: 1 }} />
+        <button className="press" onClick={() => setUsersOpen(true)} style={{ display: 'flex', alignItems: 'center' }}>
+          {audience.slice(0, 3).map((u, i) => <Avatar key={u.id} name={u.name} hue={u.hue} size={26} style={{ marginInlineStart: i ? -8 : 0, boxShadow: '0 0 0 1.5px #1C4D9C', borderRadius: '50%' }} />)}
+          <span style={{ marginInlineStart: 4, color: '#fff', fontSize: 12, fontFamily: 'var(--latin)', background: 'rgba(0,0,0,.25)', padding: '3px 8px', borderRadius: 10 }}>{online}</span>
+        </button>
+        <button className="iconbtn press" onClick={() => setMoreOpen(true)}><Ic n="power" s={20} c="#fff" w={2.2} /></button>
+      </div>
+      <div style={{ display: 'flex', gap: 6, padding: '2px 14px 0', position: 'relative' }}>
+        <span className="room-chip"><Ic n="trophy" s={11} c="#FFD45A" />{fmt(hostScore + seats.reduce((a, s) => a + (s && s !== 'locked' ? s.score || 0 : 0), 0))}</span>
+        <span className="room-chip"><Ic n="bars" s={11} c="#9EF0C8" />{room.topic}</span>
+        <Flag c={room.flag} w={20} />
+      </div>
+      {/* host */}
+      <div style={{ display: 'grid', placeItems: 'center', marginTop: 10, position: 'relative' }}>
+        <button onClick={() => !isMine && onUser(owner.id)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+          <div style={{ position: 'relative' }}>
+            <Avatar name={owner.name} hue={owner.hue} size={70} frame={owner.frame || 'gold'} speaking={speaking.host || (isMine && speaking.me && micOn)} muted={isMine && !micOn} />
+            <span style={{ position: 'absolute', bottom: -4, left: '50%', transform: 'translateX(-50%)', padding: '1px 7px', borderRadius: 8, background: 'linear-gradient(180deg,#FFD45A,#F09A12)', color: '#5A3600', fontSize: 9, fontWeight: 800, whiteSpace: 'nowrap' }}>المضيف</span>
+          </div>
+          <span style={{ color: '#fff', fontWeight: 700, fontSize: 13, marginTop: 4 }}>{owner.name}</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 2, fontSize: 10, color: '#FFD9A0', fontFamily: 'var(--latin)' }}><Ic n="heart" s={9} c="#FF7FA0" fill="#FF7FA0" w={1} />{fmt(hostScore)}</span>
+        </button>
+      </div>
+      {/* seats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', rowGap: 12, padding: '14px 10px 6px', position: 'relative' }}>
+        {seats.map((s, i) => <Seat key={i} i={i} occ={s && s !== 'locked' ? (s.isMe ? { ...s, muted: !micOn } : s) : null} locked={s === 'locked'} speaking={s && s !== 'locked' && (s.isMe ? speaking.me && micOn : speaking[i])} onClick={() => (s ? (s.isMe ? setSeatMenu(i) : takeSeat(i)) : setSeatMenu(i))} />)}
+      </div>
+      {/* chat */}
+      <div ref={chatRef} className="room-chat noscroll">
+        {msgs.map((m, i) => m.sys ? (
+          <div key={i} className={'rmsg sys' + (m.join ? ' join' : '')}>{m.text}</div>
+        ) : m.gift ? (
+          <div key={i} className="rmsg gift"><b>{m.u.name}</b> أرسل <GiftArt g={m.gift} s={20} /> {m.gift.n} ×{m.qty} إلى <b>{m.to.name}</b></div>
+        ) : (
+          <div key={i} className="rmsg" onClick={() => !m.mine && onUser(m.u.id)}>
+            <span style={{ display: 'inline-flex', gap: 3, verticalAlign: 'middle', marginInlineEnd: 4 }}><LvTag lv={m.u.lv} />{m.u.vip > 0 && <VipTag lv={m.u.vip} />}</span>
+            <b style={{ color: m.mine ? '#FFE08A' : '#9FD0FF' }}>{m.u.name}:</b> {m.text}
+          </div>
+        ))}
+      </div>
+      {/* gift fx */}
+      {fx && <div key={fx.key} className="giftfx"><GiftArt g={fx.g} s={130} /><div className="giftfx-x">×{fx.qty}</div></div>}
+      {/* bottom bar */}
+      <div className="room-bar">
+        <div className="room-input">
+          <input value={txt} onChange={e => setTxt(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendMsg()} placeholder="قل شيئاً..." />
+          {txt && <button onClick={sendMsg}><Ic n="send" s={18} c="#9FD0FF" style={{ transform: 'scaleX(-1)' }} /></button>}
+        </div>
+        {mySeat !== null && <button className="rbtn press" onClick={() => setMicOn(!micOn)}><Ic n={micOn ? 'mic' : 'micoff'} s={20} c={micOn ? '#fff' : '#FF8BA0'} /></button>}
+        <button className="rbtn press" onClick={() => setSpeakerOn(!speakerOn)}><Ic n={speakerOn ? 'speaker' : 'mute'} s={20} c="#fff" /></button>
+        <button className="rbtn press" onClick={() => setMoreOpen(true)}><Ic n="dots" s={20} c="#fff" /></button>
+        <button className="rbtn gift press" onClick={() => setGiftOpen(true)}><Ic n="gift" s={22} c="#fff" w={2} /></button>
+      </div>
+
+      <GiftSheet open={giftOpen} onClose={() => setGiftOpen(false)} targets={seatedUsers} onSend={sendGift} />
+      <Sheet open={seatMenu !== null} onClose={() => setSeatMenu(null)}>
+        <div style={{ padding: '18px 16px 26px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div style={{ textAlign: 'center', fontWeight: 800, color: '#14326E', marginBottom: 8 }}>المقعد {seatMenu !== null ? seatMenu + 1 : ''}</div>
+          {seatMenu !== null && mySeat === seatMenu ? <>
+            <button className="sheetrow" onClick={() => { setMicOn(!micOn); setSeatMenu(null); }}>{micOn ? 'كتم المايك' : 'فتح المايك'}</button>
+            <button className="sheetrow danger" onClick={() => { leaveSeat(); setSeatMenu(null); }}>النزول من المقعد</button>
+          </> : <>
+            <button className="sheetrow" onClick={() => takeSeat(seatMenu)}>الصعود إلى المقعد</button>
+            {isMine && <button className="sheetrow" onClick={() => { const s = seats.slice(); s[seatMenu] = 'locked'; setSeats(s); setSeatMenu(null); }}>قفل المقعد</button>}
+            {isMine && <button className="sheetrow" onClick={() => { setSeatMenu(null); toast('تم إرسال الدعوة'); }}>دعوة صديق</button>}
+          </>}
+          <button className="sheetrow muted" onClick={() => setSeatMenu(null)}>إلغاء</button>
+        </div>
+      </Sheet>
+      <Sheet open={usersOpen} onClose={() => setUsersOpen(false)} h={460}>
+        <div style={{ padding: '16px 14px 0', fontWeight: 800, color: '#14326E', textAlign: 'center' }}>المتواجدون ({online})</div>
+        <div style={{ padding: '6px 14px 20px', overflowY: 'auto', height: 400 }}>
+          {[owner, ...audience.filter(u => u.id !== owner.id)].map((u, i) => (
+            <div key={u.id} className="listrow" onClick={() => { setUsersOpen(false); if (u.id !== me.id) onUser(u.id); }}>
+              <Avatar name={u.name} hue={u.hue} size={44} frame={u.frame} />
+              <div style={{ flex: 1 }}><div style={{ fontWeight: 700, color: '#0F2D6E', display: 'flex', gap: 6, alignItems: 'center' }}>{u.name}{i === 0 && <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 6, background: '#FFE9A0', color: '#7A4A00' }}>المضيف</span>}</div><div style={{ display: 'flex', gap: 4, marginTop: 4 }}><LvTag lv={u.lv || 1} /><VipTag lv={u.vip} /></div></div>
+              <Flag c={u.flag} />
+            </div>
+          ))}
+        </div>
+      </Sheet>
+      <Sheet open={moreOpen} onClose={() => setMoreOpen(false)}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, padding: '22px 16px 10px' }}>
+          {[['share', 'مشاركة', () => toast('تم نسخ رابط الغرفة')], ['flag', 'إبلاغ', () => toast('تم إرسال البلاغ')], ['image', 'خلفية الغرفة', () => toast('قريباً')], ['settings', 'إعدادات', () => toast('إعدادات الغرفة')]].map(([ic, n, f]) => (
+            <button key={n} onClick={() => { f(); setMoreOpen(false); }} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}><span style={{ width: 50, height: 50, borderRadius: 16, background: '#E8F2FF', display: 'grid', placeItems: 'center' }}><Ic n={ic} s={22} c="#2F74E0" /></span><span style={{ fontSize: 12, color: '#14326E' }}>{n}</span></button>
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: 10, padding: '10px 16px 26px' }}>
+          <button className="bigbtn press" style={{ margin: 0, flex: 1, background: '#E8F2FF', color: '#2F74E0', boxShadow: 'none' }} onClick={() => { setMoreOpen(false); onMinimize(); }}>تصغير</button>
+          <button className="bigbtn press" style={{ margin: 0, flex: 1, background: 'linear-gradient(180deg,#FF8BA0,#E2466B)' }} onClick={() => { setMoreOpen(false); onClose(); }}>خروج</button>
+        </div>
+      </Sheet>
+    </div>
+  );
+}
+
+/* floating mini room bubble */
+function MiniRoom({ room, onOpen, onClose }) {
+  return (
+    <div className="miniroom" onClick={onOpen}>
+      <div className="miniroom-spin"><Cover title={room.name} hue={room.hue} size={56} radius={28} /></div>
+      <span className="eq sm" style={{ position: 'absolute', bottom: 4, left: '50%', transform: 'translateX(-50%)' }}><i /><i /><i /></span>
+      <button onClick={e => { e.stopPropagation(); onClose(); }} style={{ position: 'absolute', top: -4, right: -4, width: 20, height: 20, borderRadius: 10, background: '#4E9BFF', display: 'grid', placeItems: 'center', border: '2px solid #fff' }}><Ic n="close" s={10} c="#fff" w={3} /></button>
+    </div>
+  );
+}
+
+Object.assign(window, { RoomPage, GiftSheet, MiniRoom });
