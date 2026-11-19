@@ -12,6 +12,7 @@ const tabs: { id: Tab; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "gifts", label: "الهدايا", icon: Gift },
   { id: "vip", label: "باقات VIP", icon: Crown },
   { id: "users", label: "المستخدمون", icon: Users },
+  { id: "rooms", label: "الغرف الصوتية", icon: DoorOpen },
   { id: "reports", label: "البلاغات", icon: ShieldCheck },
   { id: "settings", label: "إعدادات التطبيق", icon: Settings },
 ];
