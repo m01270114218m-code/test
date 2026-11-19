@@ -120,6 +120,7 @@
       select: path => request("/rest/v1/" + path, { method: "GET" }),
       insert: (table, values) => request("/rest/v1/" + table, { method: "POST", headers: { Prefer: "return=representation" }, body: JSON.stringify(values) }),
       remove: (table, filter) => request("/rest/v1/" + table + "?" + filter, { method: "DELETE" }),
+      update: (table, filter, values) => request("/rest/v1/" + table + "?" + filter, { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify(values) }),
       refresh: load
     };
     window.dispatchEvent(new CustomEvent("sada-data-ready", { detail: data }));
