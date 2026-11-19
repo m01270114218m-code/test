@@ -45,6 +45,13 @@ function App() {
   const [threads, setThreads] = useState(saved.threads || { 1000210: [] });
   const [toastMsg, setToastMsg] = useState(null);
   const [scale, setScale] = useState(1);
+  const [, setAssetVersion] = useState(0);
+
+  useEffect(() => {
+    const onAssetsReady = () => setAssetVersion(v => v + 1);
+    window.addEventListener('sada-assets-ready', onAssetsReady);
+    return () => window.removeEventListener('sada-assets-ready', onAssetsReady);
+  }, []);
 
   useEffect(() => {
     localStorage.setItem(LS, JSON.stringify({ tab, partyTab, msgTab, me, coins, diamonds, following, followedRooms, recentRooms, owned, claimed, log, notif, threads }));
