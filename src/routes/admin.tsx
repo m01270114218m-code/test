@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Activity, Archive, Ban, Check, ChevronLeft, CircleDollarSign, Crown, FileImage, Gift, LayoutDashboard, LogOut, Package, RefreshCw, Search, Settings, ShieldCheck, Users, Wallet, Upload, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { Activity, Archive, Ban, Check, Crown, FileImage, Gift, LayoutDashboard, LogOut, RefreshCw, Search, Settings, ShieldCheck, Users, Wallet, Upload, X } from "lucide-react";
 import { callRpc, currentUser, getSession, insertRow, isAdmin, publicAssetUrl, saveSession, selectRows, signInWithPassword, signOut, updateRows, uploadAsset, upsertRow, type SadaSession } from "@/lib/supabase-rest";
 
 export const Route = createFileRoute("/admin")({ component: AdminPage });
@@ -80,7 +80,7 @@ function AdminPage() {
   },[]);
   useEffect(() => { if (session && isAllowed) void loadTab(tab); },[session,isAllowed,tab,loadTab]);
 
-  const login = async (e: React.FormEvent) => {
+  const login = async (e: FormEvent) => {
     e.preventDefault(); setLoading(true); setError("");
     try {
       const s = await signInWithPassword(email,password);
@@ -93,7 +93,7 @@ function AdminPage() {
   const logout = async () => { try { await signOut(); } catch {} setSession(null); setIsAllowed(false); setRows([]); };
   const filteredRows = useMemo(() => rows.filter(r => JSON.stringify(r).toLowerCase().includes(search.toLowerCase())),[rows,search]);
 
-  const saveAsset = async (e: React.FormEvent) => {
+  const saveAsset = async (e: FormEvent) => {
     e.preventDefault(); if (!assetFile) return fail(new Error("اختر ملف الأصل أولاً."));
     setLoading(true); setError(""); setNotice("");
     try {
@@ -105,12 +105,12 @@ function AdminPage() {
       setNotice("تم رفع الأصل وحفظه في مكتبة الأصول."); await loadTab("assets");
     } catch(e) { fail(e); } finally { setLoading(false); }
   };
-  const saveGift = async (e: React.FormEvent) => {
+  const saveGift = async (e: FormEvent) => {
     e.preventDefault(); setLoading(true); setError("");
     try { await insertRow("gifts",{name:giftForm.name,image_url:giftForm.image_url,price:Number(giftForm.price),currency:giftForm.currency,is_active:true}); setGiftForm({name:"",image_url:"",price:"10",currency:"coins"}); setNotice("تمت إضافة الهدية."); await loadTab("gifts"); }
     catch(e) { fail(e); } finally { setLoading(false); }
   };
-  const saveVip = async (e: React.FormEvent) => {
+  const saveVip = async (e: FormEvent) => {
     e.preventDefault(); setLoading(true); setError("");
     try { await insertRow("vip_packages",{name:vipForm.name,duration_days:Number(vipForm.duration_days),price:Number(vipForm.price),currency:vipForm.currency,benefits:{},is_active:true}); setVipForm({name:"",duration_days:"30",price:"100",currency:"diamonds"}); setNotice("تمت إضافة باقة VIP."); await loadTab("vip"); }
     catch(e) { fail(e); } finally { setLoading(false); }
@@ -134,7 +134,7 @@ function AdminPage() {
     try { await callRpc("admin_adjust_wallet",{p_user_id:id,p_currency:currency,p_amount:amount,p_reason:reason}); setNotice("تم تعديل الرصيد وتسجيل الحركة في سجل المعاملات."); }
     catch(e) { fail(e); } finally { setLoading(false); }
   };
-  const saveSetting = async (e:React.FormEvent) => {
+  const saveSetting = async (e:FormEvent) => {
     e.preventDefault();
     try { const parsed=JSON.parse(settingValue); await upsertRow("app_settings",{setting_key:settingKey,value:parsed,is_public:true,updated_by:session?.user.id},"setting_key"); setNotice("تم حفظ إعداد التطبيق."); await loadTab("settings"); }
     catch(e) { fail(e); }
