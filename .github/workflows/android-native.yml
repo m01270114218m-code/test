@@ -1,4 +1,4 @@
-name: Build Sada Native Android APK
+name: Build Sada Android APK
 on:
   push:
     branches: [test-the]
@@ -23,11 +23,18 @@ jobs:
           gradle-version: "8.9"
       - name: Install Android SDK packages
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
-      - name: Build native debug APK
+      - name: Build Android APK
         working-directory: android-native
         run: gradle :app:assembleDebug --stacktrace
+      - name: Prepare named APK and checksum
+        run: |
+          cp android-native/app/build/outputs/apk/debug/app-debug.apk Sada.apk
+          sha256sum Sada.apk > Sada.apk.sha256
       - uses: actions/upload-artifact@v4
         with:
-          name: sada-native-debug-apk
-          path: android-native/app/build/outputs/apk/debug/app-debug.apk
+          name: sada-android-apk
+          path: |
+            Sada.apk
+            Sada.apk.sha256
           if-no-files-found: error
+          retention-days: 30

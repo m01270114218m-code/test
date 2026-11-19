@@ -1,12 +1,26 @@
-# صدى — Android Native
+# صدى — حزمة Android
 
-This is a native Kotlin + Jetpack Compose Android application. It does not embed the web application in a WebView.
+## طريقة العرض
+هذا الإصدار عبارة عن APK هجين: شاشة تسجيل الدخول مبنية بـ Kotlin وJetpack Compose، وبعد تسجيل الدخول تُعرض ملفات واجهة صدى المرفقة داخل التطبيق باستخدام Android WebView محلياً عبر WebViewAssetLoader. لا يظهر شريط عنوان أو واجهة متصفح للمستخدم. هذا ليس تطبيقاً مبنياً بالكامل بعناصر Compose الأصلية.
 
-- Authentication: Supabase phone OTP and email/password.
-- Initial data: Supabase profiles, rooms, gifts, and wallet.
-- Native UI: Jetpack Compose.
+## تسجيل الدخول
+- يستخدم Supabase Auth بتدفق رقم الهاتف وكلمة المرور.
+- يُحوّل رقم الهاتف المصري المحلي إلى صيغة +20.
+- يجب إنشاء مستخدم الهاتف وتأكيده وضبط كلمة مروره في Supabase Auth مسبقاً.
+- لا توجد بيانات اعتماد إدارية أو كلمات مرور ثابتة داخل المستودع.
 
-The project currently provides the native foundation and authenticated data screens. Live RTC audio, seat signaling, in-room chat, gift purchase flows, and the complete management console still require their native feature implementation and configured service credentials. Do not describe this APK as feature-complete until those tests pass.
+## حدود الإصدار الحالي
+- واجهة صدى وملفاتها الأساسية مضمنة في assets.
+- صفحة الإدارة `/admin` غير مضمنة في حزمة Android الحالية.
+- صفحة الواجهة تستخدم React وReactDOM وBabel وخطوطاً من CDN؛ يلزم اتصال بالإنترنت لتحميل هذه الموارد، وبالتالي التشغيل دون اتصال غير مضمون.
+- طبقة Supabase تقرأ مجموعات من بيانات الملف الشخصي والغرف والهدايا والمحفظة وVIP والمخزون، لكن بعض تفاعلات الواجهة ما زالت تعتمد على الحالة المحلية وlocalStorage ولم تُحوّل كلها إلى عمليات قاعدة بيانات.
+- كود Agora موجود في مشروع Android لكنه غير موصول حالياً بجسر WebView؛ لا تعتبر المكالمات الصوتية الحية مكتملة في هذا الإصدار.
+- يجب اختبار تسجيل الدخول وتدفقات البيانات والصوت على جهاز Android فعلي قبل النشر.
 
-Build locally with Gradle 8.9+ and JDK 17:
+## البناء
+يتطلب JDK 17 وAndroid SDK وGradle 8.9:
+```bash
 gradle :app:assembleDebug
+```
+الناتج:
+`app/build/outputs/apk/debug/app-debug.apk`

@@ -1,29 +1,29 @@
-# Welcome to your Lovable project
+# صدى شات — Sada
 
-This project was built with [Lovable](https://lovable.dev).
+مشروع تطبيق صدى للدردشة والغرف الصوتية.
 
-## Build with Lovable
+## مكونات المشروع
+- `app/`: ملفات واجهة التطبيق المشتركة.
+- `public/`: ملفات الواجهة التي يقدمها مشروع الويب.
+- `android-native/`: مشروع Android الذي ينتج APK.
+- `supabase/`: مخططات وترحيلات ووظائف Supabase.
+- `.github/workflows/android-native.yml`: بناء APK تلقائياً عند تحديث ملفات Android.
 
-Open your project in the [Lovable editor](https://lovable.dev) and keep building.
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: connect the project to GitHub and every change made in Lovable is committed straight to your repository.
-- **Full ownership**: this code is yours. Push to your repository and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
+## تشغيل واجهة الويب
+يتطلب Node.js وBun:
+```bash
+bun install
+bun run dev
 ```
 
-## Built with
+## بناء APK
+يتطلب JDK 17 وAndroid SDK وGradle 8.9:
+```bash
+cd android-native
+gradle :app:assembleDebug
+```
+ملف APK الناتج:
+`android-native/app/build/outputs/apk/debug/app-debug.apk`
 
-- TanStack Start
-- TypeScript
-- React
-- Tailwind CSS
+## ملاحظات الحالة
+تطبيق Android الحالي يضم واجهة تسجيل دخول أصلية، ثم يعرض واجهة صدى المعبأة محلياً داخل WebView بلا شريط متصفح أو عنوان. بعض موارد الواجهة تُحمّل من الإنترنت؛ لذلك لا يعد التطبيق حالياً نسخة تعمل بالكامل دون اتصال. كما أن وظائف الصوت المباشر ولوحة الإدارة داخل APK تحتاج استكمال الربط والاختبار قبل وصف الإصدار بأنه إنتاجي.
