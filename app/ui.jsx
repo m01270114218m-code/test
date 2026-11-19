@@ -176,8 +176,9 @@ function Diamond({ s = 16 }) {
 
 /* ---------- Sky backdrop (mountains + palace silhouette + snow) ---------- */
 function SkyBackdrop({ h = 230, palace = true, dark }) {
+  const pageBackground = window.SADA_ASSETS?.url('page.background.default');
   return (
-    <div className="sky" style={{ height: h }}>
+    <div className="sky" style={{ height: h, backgroundImage: pageBackground ? `url("${pageBackground}")` : undefined, backgroundSize: 'cover', backgroundPosition: 'center' }}>
       <div className="sky-grad" style={dark ? { background: 'linear-gradient(180deg,#0A2659,#1D58B0 60%,#4E8FD8)' } : null} />
       <div className="snowfield" />
       <svg viewBox="0 0 390 230" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
