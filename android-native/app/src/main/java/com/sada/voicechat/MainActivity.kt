@@ -31,7 +31,7 @@ private const val PROJECT_URL = "https://pkqcxcfuelubonlkjgoq.supabase.co"
 private const val PUBLISHABLE_KEY = "sb_publishable_rTPtpxMftXim8X_Re9LxMg_vZaF_ade"
 private const val PREFS = "sada_auth"
 
-data class SadaSession(val accessToken: String, val refreshToken: String, val userId: String, val phone: String = "")
+data class SadaSession(val accessToken: String, val refreshToken: String, val userId: String, val phone: String = "", val expiresAt: Long = 0L)
 
 private suspend fun api(path: String, method: String = "GET", body: JSONObject? = null, token: String? = null): String =
     withContext(Dispatchers.IO) {
@@ -60,7 +60,7 @@ private suspend fun api(path: String, method: String = "GET", body: JSONObject? 
 private fun authBody(json: String): SadaSession {
     val data = JSONObject(json)
     val user = data.optJSONObject("user") ?: throw IllegalStateException("Supabase لم يرجع بيانات المستخدم")
-    return SadaSession(data.getString("access_token"), data.getString("refresh_token"), user.getString("id"), user.optString("phone"))
+    return SadaSession(data.getString("access_token"), data.getString("refresh_token"), user.getString("id"), user.optString("phone"), System.currentTimeMillis() / 1000 + data.optLong("expires_in", 3600))
 }
 
 class MainActivity : ComponentActivity() {
@@ -75,7 +75,7 @@ private fun SadaNativeApp(context: Context) {
     val prefs = remember { context.getSharedPreferences(PREFS, Context.MODE_PRIVATE) }
     var session by remember {
         mutableStateOf(prefs.getString("session", null)?.let {
-            try { val j = JSONObject(it); SadaSession(j.getString("access"), j.getString("refresh"), j.getString("uid"), j.optString("phone")) } catch (_: Exception) { null }
+            try { val j = JSONObject(it); SadaSession(j.getString("access"), j.getString("refresh"), j.getString("uid"), j.optString("phone"), j.optLong("expires")) } catch (_: Exception) { null }
         })
     }
     var mode by remember { mutableStateOf("phone") }
@@ -108,8 +108,15 @@ private fun SadaNativeApp(context: Context) {
     }
 
     LaunchedEffect(session?.accessToken) {
-        val s = session ?: return@LaunchedEffect
-        try { loadApp(s) } catch (e: Exception) { error = e.message ?: "تعذر تحميل بيانات التطبيق" }
+        var active = session ?: return@LaunchedEffect
+        try {
+            if (active.expiresAt <= System.currentTimeMillis() / 1000 + 60) {
+                active = authBody(api("/auth/v1/token?grant_type=refresh_token", "POST", JSONObject().put("refresh_token", active.refreshToken)))
+                session = active
+                prefs.edit().putString("session", JSONObject().put("access", active.accessToken).put("refresh", active.refreshToken).put("uid", active.userId).put("phone", active.phone).put("expires", active.expiresAt).toString()).apply()
+            }
+            loadApp(active)
+        } catch (e: Exception) { error = e.message ?: "تعذر تحميل بيانات التطبيق" }
     }
 
     MaterialTheme(colorScheme = darkColorScheme(primary = accent, background = bg, surface = panel, onSurface = Color.White)) {
@@ -131,12 +138,12 @@ private fun SadaNativeApp(context: Context) {
                                 busy = true; error = ""
                                 try {
                                     if (!otpSent) {
-                                        api("/auth/v1/otp", "POST", JSONObject().put("phone", phone).put("create_user", true))
+                                        api("/auth/v1/otp", "POST", JSONObject().put("phone", "+20" + phone).put("create_user", true))
                                         otpSent = true
                                     } else {
-                                        val s = authBody(api("/auth/v1/verify", "POST", JSONObject().put("phone", phone).put("token", otp).put("type", "sms")))
+                                        val s = authBody(api("/auth/v1/verify", "POST", JSONObject().put("phone", "+20" + phone).put("token", otp).put("type", "sms")))
                                         session = s
-                                        prefs.edit().putString("session", JSONObject().put("access", s.accessToken).put("refresh", s.refreshToken).put("uid", s.userId).put("phone", s.phone).toString()).apply()
+                                        prefs.edit().putString("session", JSONObject().put("access", s.accessToken).put("refresh", s.refreshToken).put("uid", s.userId).put("phone", s.phone).put("expires", s.expiresAt).toString()).apply()
                                     }
                                 } catch (e: Exception) { error = e.message ?: "فشل التحقق" }
                                 finally { busy = false }
