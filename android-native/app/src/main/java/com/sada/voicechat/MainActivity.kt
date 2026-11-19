@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import android.net.Uri
+import android.widget.VideoView
+import androidx.compose.ui.viewinterop.AndroidView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -216,7 +218,7 @@ private fun SadaNativeApp(context: Context) {
                             Card(colors = CardDefaults.cardColors(containerColor = panel), shape = RoundedCornerShape(14.dp)) {
                                 Column(Modifier.width(120.dp).padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                     val path = asset.optString("storage_path")
-                                    if (path.isNotBlank() && asset.optString("mime_type").startsWith("image/")) AsyncImage(model = publicAssetUrl(path), contentDescription = asset.optString("title"), modifier = Modifier.size(76.dp))
+                                    if (path.isNotBlank() && asset.optString("mime_type").startsWith("image/")) AsyncImage(model = publicAssetUrl(path), contentDescription = asset.optString("title"), modifier = Modifier.size(76.dp)) else if (path.isNotBlank() && asset.optString("mime_type").startsWith("video/")) AndroidView(factory = { ctx -> VideoView(ctx).apply { setVideoURI(android.net.Uri.parse(publicAssetUrl(path))); setOnPreparedListener { player -> player.isLooping = true; start() } } }, modifier = Modifier.size(76.dp))
                                     Text(asset.optString("title"), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                                     Text(asset.optString("category"), color = accent, fontSize = 10.sp)
                                 }
