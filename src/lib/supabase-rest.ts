@@ -2,17 +2,26 @@ const SUPABASE_URL = "https://pkqcxcfuelubonlkjgoq.supabase.co";
 const SUPABASE_KEY = "sb_publishable_rTPtpxMftXim8X_Re9LxMg_vZaF_ade";
 const SESSION_KEY = "sada.supabase.session";
 
-export type SadaSession = { access_token: string; refresh_token: string; expires_at?: number; user: { id: string; email?: string } };
+export type SadaSession = { access_token: string; refresh_token: string; expires_at?: number; expires_in?: number; token_type?: string; user: { id: string; email?: string; phone?: string } };
 export function getSession(): SadaSession | null {
   if (typeof window === "undefined") return null;
   try { const raw = localStorage.getItem(SESSION_KEY); return raw ? JSON.parse(raw) as SadaSession : null; } catch { return null; }
 }
 export function saveSession(session: SadaSession | null) {
   if (typeof window === "undefined") return;
-  if (session) localStorage.setItem(SESSION_KEY, JSON.stringify(session)); else localStorage.removeItem(SESSION_KEY);
+  if (session) { const normalized = { ...session, expires_at: session.expires_at ?? (session.expires_in ? Math.floor(Date.now()/1000) + session.expires_in : undefined) }; localStorage.setItem(SESSION_KEY, JSON.stringify(normalized)); } else localStorage.removeItem(SESSION_KEY);
+}
+async function refreshSession(session: SadaSession) {
+  if (!session.refresh_token) throw new Error("انتهت جلسة الدخول. سجّل الدخول مرة أخرى.");
+  const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, { method: "POST", headers: { apikey: SUPABASE_KEY, "Content-Type": "application/json" }, body: JSON.stringify({ refresh_token: session.refresh_token }) });
+  const data = await response.json();
+  if (!response.ok) { saveSession(null); throw new Error(data?.msg || data?.message || "انتهت جلسة الدخول."); }
+  saveSession(data as SadaSession); return getSession() as SadaSession;
 }
 async function request(path: string, init: RequestInit = {}, session?: SadaSession | null) {
-  const token = session?.access_token ?? getSession()?.access_token ?? SUPABASE_KEY;
+  let active = session ?? getSession();
+  if (active?.expires_at && active.expires_at <= Math.floor(Date.now()/1000) + 45) active = await refreshSession(active);
+  const token = active?.access_token ?? SUPABASE_KEY;
   const response = await fetch(`${SUPABASE_URL}${path}`, {
     ...init,
     headers: {
