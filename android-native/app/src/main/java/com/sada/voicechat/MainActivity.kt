@@ -105,6 +105,7 @@ private fun SadaNativeApp(context: Context) {
     var error by remember { mutableStateOf("") }
     var rooms by remember { mutableStateOf(listOf<JSONObject>()) }
     var gifts by remember { mutableStateOf(listOf<JSONObject>()) }
+    var vipPackages by remember { mutableStateOf(listOf<JSONObject>()) }
     var assets by remember { mutableStateOf(listOf<JSONObject>()) }
     var profile by remember { mutableStateOf(JSONObject()) }
     var coins by remember { mutableStateOf(0L) }
@@ -196,6 +197,8 @@ private fun SadaNativeApp(context: Context) {
         rooms = (0 until r.length()).map { r.getJSONObject(it) }
         val g = JSONArray(api("/rest/v1/gifts?select=id,name,image_url,price,currency&is_active=eq.true&order=price.asc", token = s.accessToken))
         gifts = (0 until g.length()).map { g.getJSONObject(it) }
+        val v = JSONArray(api("/rest/v1/vip_packages?select=id,name,duration_days,price,currency,benefits&is_active=eq.true&order=price.asc", token = s.accessToken))
+        vipPackages = (0 until v.length()).map { v.getJSONObject(it) }
         val a = JSONArray(api("/rest/v1/app_assets?select=asset_key,title,category,storage_path,mime_type,metadata&is_active=eq.true&limit=500", token = s.accessToken))
         assets = (0 until a.length()).map { a.getJSONObject(it) }
         val config = JSONArray(api("/rest/v1/app_settings?select=value&setting_key=eq.agora_app_id&is_public=eq.true&limit=1", token = s.accessToken))
@@ -241,97 +244,48 @@ private fun SadaNativeApp(context: Context) {
                                         api("/auth/v1/otp", "POST", JSONObject().put("phone", "+20" + phone.removePrefix("0")).put("create_user", true))
                                         otpSent = true
                                     } else {
-                                        val s = authBody(api("/auth/v1/verify", "POST", JSONObject().put("phone", "+20" + phone.removePrefix("0")).put("token", otp).put("type", "sms")))
-                                        session = s
-                                        prefs.edit().putString("session", JSONObject().put("access", s.accessToken).put("refresh", s.refreshToken).put("uid", s.userId).put("phone", s.phone).put("expires", s.expiresAt).toString()).apply()
-                                    }
-                                } catch (e: Exception) { error = e.message ?: "فشل التحقق" }
-                                finally { busy = false }
-                            }
-                        }, modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) { Text(if (busy) "جارٍ التنفيذ…" else if (otpSent) "تأكيد الدخول" else "إرسال رمز التحقق") }
-                    } else {
-                        OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("البريد الإلكتروني") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email), modifier = Modifier.fillMaxWidth())
-                        OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("كلمة المرور") }, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth())
-                        Button(enabled = !busy && email.contains("@") && password.length >= 6, onClick = {
-                            scope.launch {
-                                busy = true; error = ""
-                                try {
-                                    val s = authBody(api("/auth/v1/token?grant_type=password", "POST", JSONObject().put("email", email).put("password", password)))
-                                    session = s
-                                    prefs.edit().putString("session", JSONObject().put("access", s.accessToken).put("refresh", s.refreshToken).put("uid", s.userId).put("phone", s.phone).put("expires", s.expiresAt).toString()).apply()
-                                } catch (e: Exception) { error = e.message ?: "فشل تسجيل الدخول" }
-                                finally { busy = false }
-                            }
-                        }, modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) { Text(if (busy) "جارٍ الدخول…" else "تسجيل الدخول") }
-                    }
-                    if (error.isNotBlank()) Text(error, color = Color(0xFFFF8A9B), modifier = Modifier.padding(top = 12.dp))
-                    Text("تسجيل الدخول يتم مباشرة عبر Supabase Auth", color = Color.LightGray, fontSize = 12.sp, modifier = Modifier.padding(top = 22.dp))
-                }
-            } else {
-                Column(Modifier.fillMaxSize().padding(16.dp)) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Column { Text("صدى", fontSize = 28.sp, fontWeight = FontWeight.Black, color = Color.White); Text(profile.optString("display_name", "مرحباً بك"), color = accent) }
-                        TextButton(onClick = { leaveRoom(); session = null; prefs.edit().remove("session").apply(); rooms = emptyList(); gifts = emptyList() }) { Text("خروج") }
-                    }
-                    Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Card(Modifier.weight(1f), colors = CardDefaults.cardColors(containerColor = panel)) { Column(Modifier.padding(14.dp)) { Text("العملات", color = accent); Text(coins.toString(), color = Color.White, fontWeight = FontWeight.Bold) } }
-                        Card(Modifier.weight(1f), colors = CardDefaults.cardColors(containerColor = panel)) { Column(Modifier.padding(14.dp)) { Text("الألماس", color = accent); Text(diamonds.toString(), color = Color.White, fontWeight = FontWeight.Bold) } }
-                    }
-                    activeRoom?.let { room ->
-                        Card(colors = CardDefaults.cardColors(containerColor = panel), shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
-                            Column(Modifier.padding(14.dp)) {
-                                Text("أنت داخل: " + room.optString("title"), color = Color.White, fontWeight = FontWeight.Bold)
-                                Text(rtcStatus, color = accent, fontSize = 12.sp, modifier = Modifier.padding(vertical = 6.dp))
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    if (rtcRole == "subscriber") Button(enabled = !busyRoom, onClick = { takeMicrophoneSeat() }) { Text("اصعد للميكروفون") }
-                                    if (rtcRole == "publisher") Button(onClick = { muted = !muted; rtc.mute(muted) }) { Text(if (muted) "فتح الميكروفون" else "كتم الميكروفون") }
-                                    OutlinedButton(onClick = { leaveRoom() }) { Text("مغادرة الغرفة") }
+                SadaNativeShell(
+                    profile = profile, coins = coins, diamonds = diamonds, rooms = rooms, gifts = gifts,
+                    assets = assets, activeRoom = activeRoom, rtcRole = rtcRole, rtcStatus = rtcStatus,
+                    muted = muted, busy = busyRoom, error = error,
+                    onOpenRoom = { room ->
+                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) startRoom(room)
+                        else { pendingRoom = room; permissionLauncher.launch(Manifest.permission.RECORD_AUDIO) }
+                    },
+                    onCreateRoom = { title ->
+                        scope.launch {
+                            try {
+                                val created = JSONArray(api("/rest/v1/rooms?select=id,title", "POST", JSONObject().put("owner_id", session?.userId).put("title", title).put("room_type", "public").put("status", "active"), session?.accessToken))
+                                if (created.length() > 0) {
+                                    val id = created.getJSONObject(0).getString("id")
+                                    api("/rest/v1/rooms?id=eq.$id", "PATCH", JSONObject().put("agora_channel", "sada_$id"), session?.accessToken)
+                                    session?.let { loadApp(it) }
                                 }
-                            }
+                            } catch (e: Exception) { error = e.message ?: "تعذر إنشاء الغرفة" }
+                        }
+                    },
+                    onLeaveRoom = { leaveRoom() }, onTakeSeat = { takeMicrophoneSeat() },
+                    onToggleMute = { muted = !muted; rtc.mute(muted) },
+                    onSignOut = { leaveRoom(); session = null; prefs.edit().remove("session").apply(); rooms = emptyList(); gifts = emptyList(); assets = emptyList(); vipPackages = emptyList() },
+                    onBuyAsset = { asset ->
+                        scope.launch {
+                            try { api("/rest/v1/rpc/purchase_asset", "POST", JSONObject().put("p_asset_key", asset.optString("asset_key")), session?.accessToken); session?.let { loadApp(it) } }
+                            catch (e: Exception) { error = e.message ?: "تعذر شراء الأصل" }
+                        }
+                    },
+                    onEquipAsset = { asset ->
+                        scope.launch {
+                            try { api("/rest/v1/rpc/equip_asset", "POST", JSONObject().put("p_asset_key", asset.optString("asset_key")), session?.accessToken); session?.let { loadApp(it) } }
+                            catch (e: Exception) { error = e.message ?: "تعذر تجهيز الأصل" }
+                        }
+                    },
+                    onBuyVip = { pack ->
+                        scope.launch {
+                            try { api("/rest/v1/rpc/purchase_vip", "POST", JSONObject().put("p_package_id", pack.optString("id")), session?.accessToken); session?.let { loadApp(it) } }
+                            catch (e: Exception) { error = e.message ?: "تعذر شراء VIP" }
                         }
                     }
-                    if (error.isNotBlank()) Text(error, color = Color(0xFFFF8A9B), fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
-                    Text("الغرف الصوتية", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.padding(vertical = 8.dp))
-                    if (rooms.isEmpty()) Text("لا توجد غرف منشأة حالياً. أنشئ الغرف من لوحة الإدارة.", color = Color.LightGray)
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.weight(1f)) {
-                        items(rooms) { room ->
-                            Card(colors = CardDefaults.cardColors(containerColor = panel), shape = RoundedCornerShape(18.dp)) {
-                                Column(Modifier.fillMaxWidth().padding(14.dp)) {
-                                    Text(room.optString("title"), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 17.sp)
-                                    Text(room.optString("description"), color = Color.LightGray, fontSize = 13.sp)
-                                    Text("غرفة حقيقية مسجلة في قاعدة البيانات · ${room.optString("room_type")}", color = accent, fontSize = 11.sp, modifier = Modifier.padding(top = 6.dp))
-                                    Button(enabled = activeRoom == null && !busyRoom, onClick = { if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) startRoom(room) else { pendingRoom = room; permissionLauncher.launch(Manifest.permission.RECORD_AUDIO) } }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) { Text(if (busyRoom) "جارٍ الاتصال…" else "دخول الغرفة صوتياً") }
-                                }
-                            }
-                        }
-                    }
-                    Text("الهدايا المتاحة: ${gifts.size}", color = accent, modifier = Modifier.padding(top = 10.dp))
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        items(gifts) { gift ->
-                            Card(colors = CardDefaults.cardColors(containerColor = panel), shape = RoundedCornerShape(14.dp)) {
-                                Column(Modifier.width(116.dp).padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                    val imageUrl = gift.optString("image_url")
-                                    if (imageUrl.isNotBlank()) AsyncImage(model = imageUrl, contentDescription = gift.optString("name"), modifier = Modifier.size(70.dp))
-                                    Text(gift.optString("name"), color = Color.White, fontWeight = FontWeight.Bold)
-                                    Text(gift.optString("price") + " " + gift.optString("currency"), color = accent, fontSize = 11.sp)
-                                }
-                            }
-                        }
-                    }
-                    Text("أصول التطبيق", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.padding(top = 14.dp, bottom = 8.dp))
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        items(assets) { asset ->
-                            Card(colors = CardDefaults.cardColors(containerColor = panel), shape = RoundedCornerShape(14.dp)) {
-                                Column(Modifier.width(120.dp).padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                    val path = asset.optString("storage_path")
-                                    if (path.isNotBlank() && asset.optString("mime_type").startsWith("image/")) AsyncImage(model = publicAssetUrl(path), contentDescription = asset.optString("title"), modifier = Modifier.size(76.dp)) else if (path.isNotBlank() && asset.optString("mime_type").startsWith("video/")) AndroidView(factory = { ctx -> VideoView(ctx).apply { setVideoURI(android.net.Uri.parse(publicAssetUrl(path))); setOnPreparedListener { player -> player.isLooping = true; start() } } }, modifier = Modifier.size(76.dp))
-                                    Text(asset.optString("title"), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                                    Text(asset.optString("category"), color = accent, fontSize = 10.sp)
-                                }
-                            }
-                        }
-                    }
-                }
+                )
             }
         }
     }
