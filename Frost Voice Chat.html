@@ -25,8 +25,9 @@
 <script type="text/babel" src="app/social.jsx"></script>
 <script type="text/babel" src="app/me.jsx"></script>
 <script type="text/babel" src="app/room.jsx"></script>
+<script src="sada-data.js"></script>
 <script type="text/babel">
-const LS = 'frost-app-v1';
+const LS = 'sada-app-v2';
 const load = () => { try { return JSON.parse(localStorage.getItem(LS)) || {}; } catch (e) { return {}; } };
 const nowT = () => new Date().toTimeString().slice(0, 5);
 
@@ -41,22 +42,31 @@ function App() {
   const [me, setMe] = useState(saved.me || ME0);
   const [coins, setCoins] = useState(saved.coins ?? 0);
   const [diamonds, setDiamonds] = useState(saved.diamonds ?? 0);
-  const [following, setFollowing] = useState(saved.following || [1000210]);
+  const [following, setFollowing] = useState(saved.following || []);
   const [followedRooms, setFollowedRooms] = useState(saved.followedRooms || []);
   const [recentRooms, setRecentRooms] = useState(saved.recentRooms || []);
   const [owned, setOwned] = useState(saved.owned || []);
   const [claimed, setClaimed] = useState(saved.claimed || []);
   const [log, setLog] = useState(saved.log || []);
-  const [notif, setNotif] = useState(saved.notif || { notice: 2, official: 3, reward: 5 });
-  const [threads, setThreads] = useState(saved.threads || { 1000210: [] });
+  const [notif, setNotif] = useState(saved.notif || { notice: 0, official: 0, reward: 0 });
+  const [threads, setThreads] = useState(saved.threads || {});
   const [toastMsg, setToastMsg] = useState(null);
   const [scale, setScale] = useState(1);
   const [, setAssetVersion] = useState(0);
 
   useEffect(() => {
     const onAssetsReady = () => setAssetVersion(v => v + 1);
+    const onDataReady = (event) => {
+      const data = event.detail || {};
+      if (data.me) setMe(data.me);
+      setCoins(Number(data.wallet?.coins || 0));
+      setDiamonds(Number(data.wallet?.diamonds || 0));
+      setAssetVersion(v => v + 1);
+    };
     window.addEventListener('sada-assets-ready', onAssetsReady);
-    return () => window.removeEventListener('sada-assets-ready', onAssetsReady);
+    window.addEventListener('sada-data-ready', onDataReady);
+    if (window.SADA_DATA) onDataReady({ detail: window.SADA_DATA });
+    return () => { window.removeEventListener('sada-assets-ready', onAssetsReady); window.removeEventListener('sada-data-ready', onDataReady); };
   }, []);
 
   useEffect(() => {
@@ -77,7 +87,7 @@ function App() {
   const sendDM = (uid, m) => {
     setThreads(t => ({ ...t, [uid]: [...(t[uid] || []), { from: 'me', t: nowT(), ...m }] }));
     if (m.gift) { const g = GIFTS.find(x => x.n === m.gift); if (coins < g.p) { toast('رصيد غير كافٍ'); return; } setCoins(c => c - g.p); pushLog('هدية ' + g.n, -g.p); }
-    setTimeout(() => setThreads(t => ({ ...t, [uid]: [...(t[uid] || []), { from: uid, t: nowT(), text: m.gift ? 'شكراً على الهدية ❤' : CHAT_LINES[Math.floor(Math.random() * CHAT_LINES.length)] }] })), 1400);
+
   };
   const friends = following;
 
