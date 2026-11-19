@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -19,6 +20,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import android.net.Uri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -30,6 +33,7 @@ import java.net.URL
 private const val PROJECT_URL = "https://pkqcxcfuelubonlkjgoq.supabase.co"
 private const val PUBLISHABLE_KEY = "sb_publishable_rTPtpxMftXim8X_Re9LxMg_vZaF_ade"
 private const val PREFS = "sada_auth"
+private fun publicAssetUrl(path: String): String = PROJECT_URL + "/storage/v1/object/public/sada-app-assets/" + path.split("/").joinToString("/") { Uri.encode(it) }
 
 data class SadaSession(val accessToken: String, val refreshToken: String, val userId: String, val phone: String = "", val expiresAt: Long = 0L)
 
@@ -88,6 +92,7 @@ private fun SadaNativeApp(context: Context) {
     var error by remember { mutableStateOf("") }
     var rooms by remember { mutableStateOf(listOf<JSONObject>()) }
     var gifts by remember { mutableStateOf(listOf<JSONObject>()) }
+    var assets by remember { mutableStateOf(listOf<JSONObject>()) }
     var profile by remember { mutableStateOf(JSONObject()) }
     var coins by remember { mutableStateOf(0L) }
     var diamonds by remember { mutableStateOf(0L) }
@@ -103,6 +108,8 @@ private fun SadaNativeApp(context: Context) {
         rooms = (0 until r.length()).map { r.getJSONObject(it) }
         val g = JSONArray(api("/rest/v1/gifts?select=id,name,image_url,price,currency&is_active=eq.true&order=price.asc", token = s.accessToken))
         gifts = (0 until g.length()).map { g.getJSONObject(it) }
+        val a = JSONArray(api("/rest/v1/app_assets?select=asset_key,title,category,storage_path,mime_type,metadata&is_active=eq.true&limit=500", token = s.accessToken))
+        assets = (0 until a.length()).map { a.getJSONObject(it) }
         val w = JSONArray(api("/rest/v1/wallets?select=coins,diamonds&user_id=eq.${s.userId}&limit=1", token = s.accessToken))
         if (w.length() > 0) { coins = w.getJSONObject(0).optLong("coins"); diamonds = w.getJSONObject(0).optLong("diamonds") }
     }
@@ -191,7 +198,31 @@ private fun SadaNativeApp(context: Context) {
                         }
                     }
                     Text("الهدايا المتاحة: ${gifts.size}", color = accent, modifier = Modifier.padding(top = 10.dp))
-                    if (gifts.isNotEmpty()) Text(gifts.joinToString(" · ") { it.optString("name") }, color = Color.White, fontSize = 12.sp)
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        items(gifts) { gift ->
+                            Card(colors = CardDefaults.cardColors(containerColor = panel), shape = RoundedCornerShape(14.dp)) {
+                                Column(Modifier.width(116.dp).padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                    val imageUrl = gift.optString("image_url")
+                                    if (imageUrl.isNotBlank()) AsyncImage(model = imageUrl, contentDescription = gift.optString("name"), modifier = Modifier.size(70.dp))
+                                    Text(gift.optString("name"), color = Color.White, fontWeight = FontWeight.Bold)
+                                    Text(gift.optString("price") + " " + gift.optString("currency"), color = accent, fontSize = 11.sp)
+                                }
+                            }
+                        }
+                    }
+                    Text("أصول التطبيق", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.padding(top = 14.dp, bottom = 8.dp))
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        items(assets) { asset ->
+                            Card(colors = CardDefaults.cardColors(containerColor = panel), shape = RoundedCornerShape(14.dp)) {
+                                Column(Modifier.width(120.dp).padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                    val path = asset.optString("storage_path")
+                                    if (path.isNotBlank() && asset.optString("mime_type").startsWith("image/")) AsyncImage(model = publicAssetUrl(path), contentDescription = asset.optString("title"), modifier = Modifier.size(76.dp))
+                                    Text(asset.optString("title"), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                    Text(asset.optString("category"), color = accent, fontSize = 10.sp)
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
