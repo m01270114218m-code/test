@@ -165,9 +165,9 @@ function RoomPage({ room, onClose, onMinimize, onUser }) {
       toast(error instanceof Error ? error.message : 'فشل إرسال الهدية');
     }
   };
-  const roomBackground = window.SADA_ASSETS?.url('room.background.default');
-  const chatBubbleAsset = window.SADA_ASSETS?.url('chat.bubble.default');
-  const entranceItem = window.SADA_ASSETS?.get('entrance.default');
+  const roomBackground = window.SADA_ASSETS?.url(me.equipped_room_background || 'room.background.default');
+  const chatBubbleAsset = window.SADA_ASSETS?.url(me.equipped_chat_bubble || 'chat.bubble.default');
+  const entranceItem = window.SADA_ASSETS?.get(me.equipped_entrance || 'entrance.default');
   const [entranceVisible, setEntranceVisible] = useState(true);
   useEffect(() => { setEntranceVisible(true); const timer = setTimeout(() => setEntranceVisible(false), 5500); return () => clearTimeout(timer); }, [room.id]);
   const seatedUsers = [owner, ...seats.filter(s => s && s !== 'locked' && !s.isMe)];
@@ -240,7 +240,7 @@ function RoomPage({ room, onClose, onMinimize, onUser }) {
         {mySeat !== null && <button className="rbtn press" onClick={() => setMicOn(!micOn)}><Ic n={micOn ? 'mic' : 'micoff'} s={20} c={micOn ? '#fff' : '#FF8BA0'} /></button>}
         <button className="rbtn press" onClick={() => setSpeakerOn(!speakerOn)}><Ic n={speakerOn ? 'speaker' : 'mute'} s={20} c="#fff" /></button>
         <button className="rbtn press" onClick={() => setMoreOpen(true)}><Ic n="dots" s={20} c="#fff" /></button>
-        <button className="rbtn gift press" onClick={() => setGiftOpen(true)}>{window.SADA_ASSETS?.url('room.gift_box') ? <img src={window.SADA_ASSETS.url('room.gift_box')} alt="صندوق الهدايا" style={{ width: 26, height: 26, objectFit: 'contain' }} /> : <Ic n="gift" s={22} c="#fff" w={2} />}</button>
+        <button className="rbtn gift press" onClick={() => setGiftOpen(true)}>{window.SADA_ASSETS?.url(me.equipped_room_gift_box || 'room.gift_box') ? <img src={window.SADA_ASSETS.url('room.gift_box')} alt="صندوق الهدايا" style={{ width: 26, height: 26, objectFit: 'contain' }} /> : <Ic n="gift" s={22} c="#fff" w={2} />}</button>
       </div>
 
       <GiftSheet open={giftOpen} onClose={() => setGiftOpen(false)} targets={seatedUsers} onSend={sendGift} />
