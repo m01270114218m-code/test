@@ -145,10 +145,10 @@ private fun SadaNativeApp(context: Context) {
                                 busy = true; error = ""
                                 try {
                                     if (!otpSent) {
-                                        api("/auth/v1/otp", "POST", JSONObject().put("phone", "+20" + phone).put("create_user", true))
+                                        api("/auth/v1/otp", "POST", JSONObject().put("phone", "+20" + phone.removePrefix("0")).put("create_user", true))
                                         otpSent = true
                                     } else {
-                                        val s = authBody(api("/auth/v1/verify", "POST", JSONObject().put("phone", "+20" + phone).put("token", otp).put("type", "sms")))
+                                        val s = authBody(api("/auth/v1/verify", "POST", JSONObject().put("phone", "+20" + phone.removePrefix("0")).put("token", otp).put("type", "sms")))
                                         session = s
                                         prefs.edit().putString("session", JSONObject().put("access", s.accessToken).put("refresh", s.refreshToken).put("uid", s.userId).put("phone", s.phone).put("expires", s.expiresAt).toString()).apply()
                                     }
