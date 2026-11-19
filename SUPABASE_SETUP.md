@@ -38,8 +38,8 @@ No demo catalog was inserted. The current project had no room, gift, VIP-package
 ## Agora / live voice
 The Supabase Edge Function `agora-token` is deployed and now verifies room membership and publisher/subscriber role before issuing a token.
 For live RTC, configure Supabase Edge Function secrets:
-- `AGORA_APP_ID`
-- `AGORA_APP_CERTIFICATE`
+- `AGORA_APP_CERTIFICATE` (required secret; never put this value in the app)
+- `AGORA_APP_ID` (recommended secret). Alternatively, add a public `app_settings` row with `setting_key = agora_app_id` and a JSON string value so the native client can pass the public App ID to the token function.
 
 The native Kotlin project now includes the Agora Android SDK, room token request, room membership check, microphone-seat request, mute control, and leave flow. It is not production-verified until the APK build passes and the two Agora secrets are configured and tested on physical devices. In-room native chat, gifts, entry animations, and complete moderation controls still need native UI wiring.
 
