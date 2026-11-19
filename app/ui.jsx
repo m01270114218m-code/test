@@ -80,7 +80,7 @@ const FRAMES = {
   violet: 'conic-gradient(from 0deg,#F6DDFF,#9B4FE0,#FFE6FF,#6E2CC0,#F6DDFF)',
   rose: 'conic-gradient(from 0deg,#FFE0EA,#E0477A,#FFF0F4,#B4245A,#FFE0EA)',
 };
-function Avatar({ name = '', hue, size = 44, frame, square, radius, onClick, speaking, style, muted }) {
+function Avatar({ name = '', hue, size = 44, frame, square, radius, onClick, speaking, style, muted, src }) {
   const h = hue ?? hueOf(name);
   const letter = Array.from(String(name).trim())[0] || '؟';
   const r = square ? (radius ?? size * 0.22) : '50%';
@@ -92,7 +92,7 @@ function Avatar({ name = '', hue, size = 44, frame, square, radius, onClick, spe
       display: 'grid', placeItems: 'center', color: '#fff', fontFamily: 'var(--display)', fontWeight: 700,
       fontSize: size * 0.42, textShadow: '0 1px 4px rgba(0,0,0,.25)',
     }}>
-      <span style={{ transform: 'translateY(-2%)' }}>{letter}</span>
+      {src ? <img src={src} alt={name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ transform: 'translateY(-2%)' }}>{letter}</span>}
       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg,rgba(255,255,255,.35),transparent 45%)' }} />
     </div>
   );
