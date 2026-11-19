@@ -7,13 +7,13 @@
     return PROJECT + "/storage/v1/object/public/" + BUCKET + "/" + String(path).split("/").map(encodeURIComponent).join("/");
   }
   async function refresh() {
-    const response = await fetch(PROJECT + "/rest/v1/app_assets?select=asset_key,category,storage_path,metadata&is_active=eq.true&order=sort_order.asc", {
+    const response = await fetch(PROJECT + "/rest/v1/app_assets?select=asset_key,category,storage_path,metadata,mime_type&is_active=eq.true&order=sort_order.asc", {
       headers: { apikey: KEY, Authorization: "Bearer " + KEY }
     });
     if (!response.ok) throw new Error("Unable to load visual assets: " + response.status);
     const rows = await response.json();
     const next = Object.create(null);
-    rows.forEach(function (row) { next[row.asset_key] = { url: url(row.storage_path), category: row.category, metadata: row.metadata || {} }; });
+    rows.forEach(function (row) { next[row.asset_key] = { url: url(row.storage_path), category: row.category, mime_type: row.mime_type || '', metadata: row.metadata || {} }; });
     registry = next;
     window.SADA_ASSETS = api;
     window.dispatchEvent(new CustomEvent("sada-assets-ready", { detail: registry }));
