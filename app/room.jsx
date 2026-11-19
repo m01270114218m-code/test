@@ -137,12 +137,13 @@ function RoomPage({ room, onClose, onMinimize, onUser }) {
     setFx({ g, qty, key: Date.now() }); setGiftOpen(false);
     setTimeout(() => setFx(null), 2200);
   };
+  const roomBackground = window.SADA_ASSETS?.url('room.background.default');
   const seatedUsers = [owner, ...seats.filter(s => s && s !== 'locked' && !s.isMe)];
   const audience = USERS.slice(0, Math.min(10, online));
 
   return (
     <div className="room" style={{ '--rh': room.hue }}>
-      <div className="room-bg" />
+      <div className="room-bg" style={roomBackground ? { backgroundImage: `url("${roomBackground}")`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined} />
       <div className="room-snow" />
       <StatusBar />
       {/* header */}
