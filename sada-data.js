@@ -7,7 +7,7 @@
     if (!response.ok) throw new Error("Supabase data request failed (" + response.status + ")");
     return response.json();
   }
-  async function request(path, init) {
+  async function activeSession() {\n    let session = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");\n    if (!session || !session.access_token) throw new Error("انتهت جلسة الدخول");\n    if (session.expires_at && session.expires_at <= Math.floor(Date.now()/1000) + 45 && session.refresh_token) {\n      const response = await fetch(PROJECT + "/auth/v1/token?grant_type=refresh_token", { method:"POST", headers:{apikey:KEY,"Content-Type":"application/json"}, body:JSON.stringify({refresh_token:session.refresh_token}) });\n      const refreshed = await response.json(); if (!response.ok) { localStorage.removeItem(SESSION_KEY); throw new Error("انتهت جلسة الدخول"); }\n      session = { ...refreshed, expires_at: Math.floor(Date.now()/1000) + Number(refreshed.expires_in || 3600) }; localStorage.setItem(SESSION_KEY, JSON.stringify(session));\n    }\n    return session;\n  }\n  async function request(path, init) {
     const session = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
     if (!session || !session.access_token) throw new Error("انتهت جلسة الدخول");
     const response = await fetch(PROJECT + path, { ...init, headers: { apikey: KEY, Authorization: "Bearer " + session.access_token, "Content-Type": "application/json", ...(init && init.headers || {}) } });
@@ -21,7 +21,7 @@
     const token = session.access_token;
     const userId = session.user && session.user.id;
     const results = await Promise.all([
-      get("profiles?select=id,username,display_name,avatar_url,level,country,bio,account_status&account_status=eq.active&limit=500", token),
+      get("profiles?select=id,username,display_name,avatar_url,level,country,bio,account_status,metadata&account_status=eq.active&limit=500", token),
       get("rooms?select=id,owner_id,title,description,cover_url,room_type,status&status=eq.active&limit=200", token),
       get("gifts?select=id,name,image_url,price,currency&is_active=eq.true&order=price.asc", token),
       get("wallets?select=coins,diamonds&user_id=eq." + encodeURIComponent(userId) + "&limit=1", token),
@@ -29,8 +29,9 @@
     ]);
     const profiles = results[0] || [];
     const meRow = profiles.find(p => p.id === userId);
-    const mapUser = p => ({ id:p.id, name:p.display_name || p.username || "عضو", hue:210, lv:p.level || 1, vip:0, following:0, fans:0, charm:0, flag:(p.country || "eg").toLowerCase(), g:"m", age:null, bio:p.bio || "", avatar_url:p.avatar_url });
+    const mapUser = p => ({ id:p.id, name:p.display_name || p.username || "عضو", hue:210, lv:p.level || 1, vip:0, following:0, fans:0, charm:0, flag:(p.country || "eg").toLowerCase(), g:"m", age:null, bio:p.bio || "", avatar_url:p.avatar_url, frame:p.metadata?.equipped_frame || p.metadata?.frame });
     const me = meRow ? mapUser(meRow) : { id:userId, name:session.user?.phone || "عضو", hue:210, lv:1, vip:0, following:0, fans:0, charm:0, flag:"eg", g:"m", bio:"" };
+    if ((results[4] || []).length) me.vip = Number((results[4][0].package_id || "").toString().slice(0,1)) || 1;
     const users = profiles.map(mapUser);
     const rooms = (results[1] || []).map(r => ({ id:r.id, name:r.title, flag:"eg", vip:0, count:0, hue:210, badges:0, owner:r.owner_id, glyph:"users", topic:r.description || "دردشة", cover_url:r.cover_url, room_type:r.room_type }));
     const gifts = (results[2] || []).map(g => ({ id:g.id, n:g.name, p:Number(g.price), ic:"gift", c:["#D9E9FF","#397BC8"], image_url:g.image_url, currency:g.currency }));
@@ -43,4 +44,5 @@
   }
   load().catch(error => console.error("[Sada data]", error));
   window.addEventListener("focus", () => load().catch(error => console.warn("[Sada refresh]", error)));
+  window.setInterval(() => load().catch(error => console.warn("[Sada refresh]", error)), 30000);
 })();
