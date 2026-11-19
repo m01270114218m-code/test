@@ -42,8 +42,10 @@ Deno.serve(async (req: Request) => {
     const { data: seat } = await supabase.from("room_seats").select("id").eq("room_id", room.id).eq("user_id", user.id).maybeSingle();
     const publisher = isOwner || !!seat;
     const role = publisher ? RtcRole.PUBLISHER : RtcRole.SUBSCRIBER;
-    const expiresAt = Math.floor(Date.now() / 1000) + 3600;
-    const rtcToken = RtcTokenBuilder.buildTokenWithUid(appId, appCertificate, channel, uid, role, expiresAt);
+    const tokenExpirationSeconds = 3600;
+    const privilegeExpirationSeconds = 3600;
+    const expiresAt = Math.floor(Date.now() / 1000) + tokenExpirationSeconds;
+    const rtcToken = RtcTokenBuilder.buildTokenWithUid(appId, appCertificate, channel, uid, role, tokenExpirationSeconds, privilegeExpirationSeconds);
     return json({ rtcToken, appId, uid, role: publisher ? "publisher" : "subscriber", expiresAt });
   } catch (error) {
     console.error("agora-token error", error);
