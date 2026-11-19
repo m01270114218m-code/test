@@ -41,7 +41,7 @@ For live RTC, configure Supabase Edge Function secrets:
 - `AGORA_APP_ID`
 - `AGORA_APP_CERTIFICATE`
 
-The current native APK is a native authentication and data foundation. It does not yet join Agora channels, capture microphone audio, or implement the complete seat audio controls. The Agora Android SDK and token-client wiring must be completed and tested before claiming live voice is available.
+The native Kotlin project now includes the Agora Android SDK, room token request, room membership check, microphone-seat request, mute control, and leave flow. It is not production-verified until the APK build passes and the two Agora secrets are configured and tested on physical devices. In-room native chat, gifts, entry animations, and complete moderation controls still need native UI wiring.
 
 ## Production security follow-up
 Supabase Security Advisor currently reports leaked-password protection is disabled. Enable it in Supabase Auth password security settings before production release. The admin-only SECURITY DEFINER RPCs check the caller's admin role; the security advisor still flags these callable functions for review.
