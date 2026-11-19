@@ -134,7 +134,7 @@ function WalletPage({ onBack }) {
 
 /* ---------- VIP ---------- */
 function VipPage({ onBack }) {
-  const { me, toast } = useApp();
+  const { me, coins, diamonds, toast } = useApp();
   const packages = window.SADA_DATA?.vipPackages || [];
   const [selectedId, setSelectedId] = useState(packages[0]?.id || '');
   const [busy, setBusy] = useState(false);
@@ -176,7 +176,7 @@ function VipPage({ onBack }) {
         </>}
       </div>
       <div style={{ padding: '12px 14px 26px', display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(0,0,0,.25)' }}>
-        <div style={{ flex: 1, color: '#fff' }}><div style={{ fontSize: 12, color: '#9EC3FF' }}>رصيدك الحالي: {fmt(selected?.currency === 'diamonds' ? 0 : 0)}</div><div style={{ fontSize: 11, color: '#9EC3FF' }}>الشراء يخصم من محفظتك بأمان عبر قاعدة البيانات</div></div>
+        <div style={{ flex: 1, color: '#fff' }}><div style={{ fontSize: 12, color: '#9EC3FF' }}>رصيدك الحالي: {fmt(selected?.currency === 'diamonds' ? diamonds : coins)}</div><div style={{ fontSize: 11, color: '#9EC3FF' }}>{me.vip ? 'لديك عضوية VIP فعالة' : 'الشراء يخصم من محفظتك بأمان عبر قاعدة البيانات'}</div></div>
         <button disabled={!selected || busy} className="press" onClick={purchase} style={{ padding: '12px 30px', borderRadius: 24, fontWeight: 800, color: '#5A3600', background: 'linear-gradient(180deg,#FFE9A0,#F0B23A)', opacity: !selected || busy ? .5 : 1 }}>{busy ? 'جارٍ التفعيل…' : 'تفعيل VIP'}</button>
       </div>
     </div>
