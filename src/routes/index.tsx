@@ -92,7 +92,7 @@ function Login() {
               <input type="email" autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="البريد الإلكتروني" className={`${field} w-full px-4 py-4`} />
               <input type="password" autoComplete="current-password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="كلمة المرور" className={`${field} w-full px-4 py-4`} />
               {authError && <p role="alert" className="text-sm text-rose-300">{authError}</p>}
-              <button disabled={!email.includes("@") || password.length < 6 || busy} onClick={async()=>{setBusy(true);setAuthError("");try{await signInWithPassword(email,password);window.location.assign("/Frost%20Voice%20Chat.html");}catch(e){setAuthError(e instanceof Error?e.message:"تعذر تسجيل الدخول.");}finally{setBusy(false);}}} className={primary}>{busy?"جارٍ الدخول…":"تسجيل الدخول"}</button>
+              <button disabled={!email.includes("@") || password.length < 6 || busy} onClick={async()=>{setBusy(true);setAuthError("");try{await signInWithPassword(email,password);window.location.assign("/sada.html");}catch(e){setAuthError(e instanceof Error?e.message:"تعذر تسجيل الدخول.");}finally{setBusy(false);}}} className={primary}>{busy?"جارٍ الدخول…":"تسجيل الدخول"}</button>
             </div>
           )}
 
@@ -154,7 +154,7 @@ function Login() {
               {authError && <p role="alert" className="text-sm text-rose-300">{authError}</p>}
               <button disabled={code.join("").length < 6 || busy} onClick={async () => {
                 setBusy(true); setAuthError("");
-                try { await verifyPhoneOtp(fullPhone, code.join("")); window.location.assign("/Frost%20Voice%20Chat.html"); }
+                try { await verifyPhoneOtp(fullPhone, code.join("")); window.location.assign("/sada.html"); }
                 catch (e) { setAuthError(e instanceof Error ? e.message : "رمز التحقق غير صحيح."); }
                 finally { setBusy(false); }
               }} className={primary}>{busy ? "جارٍ التحقق…" : "تأكيد والدخول"}</button>
