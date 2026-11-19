@@ -32,7 +32,7 @@ function AdminPage() {
   const [stats,setStats] = useState({users:0,rooms:0,gifts:0,assets:0,reports:0});
   const [search,setSearch] = useState("");
   const [assetFile,setAssetFile] = useState<File|null>(null);
-  const [assetForm,setAssetForm] = useState({asset_key:"",title:"",category:"frame",sort_order:"0"});
+  const [assetForm,setAssetForm] = useState({asset_key:"",title:"",category:"frame",sort_order:"0",price:"0",currency:"coins"});
   const [giftForm,setGiftForm] = useState({name:"",image_url:"",price:"10",currency:"coins"});
   const [giftEditingId,setGiftEditingId] = useState<string|null>(null);
   const [vipForm,setVipForm] = useState({name:"",duration_days:"30",price:"100",currency:"diamonds"});
@@ -107,7 +107,7 @@ function AdminPage() {
       await uploadAsset(assetFile,path);
       await upsertRow("app_assets",{asset_key:assetForm.asset_key,title:assetForm.title,category:assetForm.category,storage_path:path,mime_type:assetFile.type,sort_order:Number(assetForm.sort_order)||0,is_active:true,created_by:session?.user.id},"asset_key");
       await insertRow("admin_audit_logs",{actor_id:session?.user.id,action:"asset.upsert",entity_type:"app_asset",entity_id:assetForm.asset_key,details:{path,category:assetForm.category}});
-      setAssetForm({asset_key:"",title:"",category:"frame",sort_order:"0"}); setAssetFile(null);
+      setAssetForm({asset_key:"",title:"",category:"frame",sort_order:"0",price:"0",currency:"coins"}); setAssetFile(null);
       setNotice("تم رفع الأصل وحفظه في مكتبة الأصول."); await loadTab("assets");
     } catch(e) { fail(e); } finally { setLoading(false); }
   };
