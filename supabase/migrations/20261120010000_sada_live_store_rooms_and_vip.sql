@@ -115,11 +115,13 @@ begin
   if not exists(select 1 from public.user_inventory where user_id=v_uid and item_type=v_asset.category and item_id=v_asset.asset_key and (expires_at is null or expires_at>now())) then
     raise exception 'asset is not in your inventory';
   end if;
-  v_meta_key := case v_asset.category
-    when 'frame' then 'equipped_frame'
-    when 'entrance' then 'equipped_entrance'
-    when 'page_element' then 'equipped_page_element'
-    when 'room_background' then 'equipped_room_background'
+  v_meta_key := case
+    when p_asset_key like 'profile.card.%' then 'equipped_profile_card_background'
+    when p_asset_key like 'chat.bubble.%' then 'equipped_chat_bubble'
+    when p_asset_key like 'room.background.%' then 'equipped_room_background'
+    when p_asset_key like 'room.gift_box%' then 'equipped_room_gift_box'
+    when p_asset_key like 'entrance.%' then 'equipped_entrance'
+    when v_asset.category='frame' then 'equipped_frame'
     else 'equipped_' || v_asset.category
   end;
   update public.profiles
