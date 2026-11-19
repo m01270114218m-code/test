@@ -93,9 +93,24 @@ function App() {
 
   const go = (p) => setStack(s => [...s, p]);
   const back = () => setStack(s => s.slice(0, -1));
-  const openRoom = (r) => {
-    setRoom(r); setRoomMin(false); setStack([]);
-    setRecentRooms(rs => [r.id, ...rs.filter(x => x !== r.id)].slice(0, 8));
+  const openRoom = async (r) => {
+    try {
+      let target = r;
+      if (!target.id && target.mine) {
+        const title = window.prompt("اسم الغرفة الجديدة");
+        if (!title || !title.trim()) return;
+        const created = await window.SADA_API.insert("rooms", { owner_id: me.id, title: title.trim(), room_type: "public", status: "active" });
+        const row = Array.isArray(created) ? created[0] : created;
+        if (!row?.id) throw new Error("لم يتم إنشاء الغرفة");
+        target = { id: row.id, name: row.title, flag: "eg", vip: 0, count: 0, hue: 210, badges: 0, owner: me.id, glyph: "users", topic: row.description || "دردشة", mine: true, seats: Array(8).fill(null), members: [] };
+        await window.SADA_API.refresh();
+      }
+      if (!target.id) return;
+      setRoom(target); setRoomMin(false); setStack([]);
+      setRecentRooms(rs => [target.id, ...rs.filter(x => x !== target.id)].slice(0, 8));
+    } catch (error) {
+      toast(error instanceof Error ? error.message : "تعذر فتح الغرفة");
+    }
   };
   const openCat = (c) => { setNotif(n => ({ ...n, [c]: 0 })); go({ p: 'notif', cat: c }); };
   const unread = notif.notice + notif.official + notif.reward;
