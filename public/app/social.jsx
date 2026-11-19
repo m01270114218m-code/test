@@ -150,7 +150,7 @@ function ProfilePage({ uid, onBack, onChat, onRoom }) {
   const u = userById(uid);
   const fol = following.includes(uid);
   const room = ROOMS.find(r => r.owner === uid);
-  const profileCardBackground = window.SADA_ASSETS?.url('profile.card.background');
+  const profileCardBackground = window.SADA_ASSETS?.url(u.equipped_profile_card_background || 'profile.card.background');
   const [tab, setTab] = useState('honor');
   return (
     <div className="page" style={{ background: '#EAF3FF' }}>
