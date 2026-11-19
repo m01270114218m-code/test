@@ -65,24 +65,19 @@ function Seat({ i, occ, speaking, locked, onClick }) {
 
 function RoomPage({ room, onClose, onMinimize, onUser }) {
   const { me, coins, setCoins, followedRooms, toggleFollowRoom, toast, pushLog, setDiamonds, diamonds } = useApp();
-  const owner = room.mine ? { ...me } : userById(room.owner);
+  const owner = (room.mine ? { ...me } : userById(room.owner)) || { id: room.owner, name: room.name, hue: 210, lv: 1, vip: 0 };
   const isMine = !!room.mine;
-  const pool = useMemo(() => USERS.filter(u => u.id !== room.owner).sort(() => .5 - (room.id % 7) / 7).slice(0, isMine ? 0 : 6), [room.id]);
-  const [seats, setSeats] = useState(() => {
-    const s = Array(8).fill(null);
-    pool.forEach((u, i) => { if (i < 5) s[[0, 1, 3, 4, 6][i]] = { ...u, score: (u.lv * 131) % 900, muted: i === 3 }; });
-    if (!isMine) s[7] = 'locked';
-    return s;
+  const [seats, setSeats] = useState(() => room.seats || Array(8).fill(null));
+  const [roomMembers, setRoomMembers] = useState(room.members || []);
+  const [hostScore] = useState(0);
+  const [mySeat, setMySeat] = useState(() => {
+    const index = (room.seats || []).findIndex(x => x && x !== 'locked' && x.id === me.id);
+    return index >= 0 ? index : (isMine ? 'host' : null);
   });
-  const [hostScore, setHostScore] = useState(isMine ? 0 : 12800);
-  const [mySeat, setMySeat] = useState(isMine ? 'host' : null);
   const [micOn, setMicOn] = useState(true);
   const [speakerOn, setSpeakerOn] = useState(true);
   const [speaking, setSpeaking] = useState({});
-  const [msgs, setMsgs] = useState(() => [
-    { sys: true, text: 'مرحباً بكم في الغرفة. يُرجى الالتزام بالآداب العامة، وأي مخالفة تعرّض صاحبها للحظر.' },
-    { sys: true, text: `${me.name} دخل الغرفة`, join: true },
-  ]);
+  const [msgs, setMsgs] = useState([]);
   const [txt, setTxt] = useState('');
   const [giftOpen, setGiftOpen] = useState(false);
   const [seatMenu, setSeatMenu] = useState(null);
@@ -91,23 +86,69 @@ function RoomPage({ room, onClose, onMinimize, onUser }) {
   const [fx, setFx] = useState(null);
   const chatRef = useRef(null);
   const followed = followedRooms.includes(room.id);
-  const online = room.count + (mySeat ? 1 : 0) + 1;
+  const online = roomMembers.length;
 
-  // Speaking indicators and chat messages are driven by real room events; no fake activity is generated.
+  const loadRoomState = async () => {
+    if (!window.SADA_API?.select || !room.id) return;
+    const roomFilter = "room_id=eq." + encodeURIComponent(room.id);
+    const [seatRows, memberRows, messageRows] = await Promise.all([
+      window.SADA_API.select("room_seats?select=room_id,seat_number,user_id,seat_status&" + roomFilter),
+      window.SADA_API.select("room_members?select=user_id,role&" + roomFilter),
+      window.SADA_API.select("chat_messages?select=id,sender_id,body,message_type,created_at&" + roomFilter + "&deleted_at=is.null&order=created_at.asc&limit=100")
+    ]);
+    const nextSeats = Array(8).fill(null);
+    seatRows.forEach(row => {
+      const index = Number(row.seat_number);
+      if (index >= 0 && index < 8) nextSeats[index] = row.seat_status === "locked" ? "locked" : (userById(row.user_id) || null);
+    });
+    setSeats(nextSeats);
+    setRoomMembers(memberRows.map(row => userById(row.user_id)).filter(Boolean));
+    setMsgs(messageRows.map(row => ({ id: row.id, u: userById(row.sender_id) || { id: row.sender_id, name: "عضو" }, text: row.body || "", mine: row.sender_id === me.id })));
+    const mine = nextSeats.findIndex(x => x && x !== "locked" && x.id === me.id);
+    if (mine >= 0) setMySeat(mine);
+  };
+  useEffect(() => {
+    let active = true;
+    const joinAndLoad = async () => {
+      if (!room.id || !window.SADA_API?.select) return;
+      try {
+        const existing = await window.SADA_API.select("room_members?select=user_id&room_id=eq." + encodeURIComponent(room.id) + "&user_id=eq." + encodeURIComponent(me.id));
+        if (!existing.length) await window.SADA_API.insert("room_members", { room_id: room.id, user_id: me.id, role: "member" });
+        if (active) await loadRoomState();
+      } catch (error) { if (active) toast(error instanceof Error ? error.message : "تعذر الانضمام للغرفة"); }
+    };
+    void joinAndLoad();
+    const timer = setInterval(() => { if (active) void loadRoomState().catch(() => {}); }, 4000);
+    return () => { active = false; clearInterval(timer); };
+  }, [room.id, me.id]);
   useEffect(() => { if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight; }, [msgs.length]);
 
-  const sendMsg = () => { if (!txt.trim()) return; setMsgs(m => [...m, { u: me, text: txt.trim(), mine: true }]); setTxt(''); };
-  const takeSeat = (i) => {
-    if (seats[i] === 'locked') return toast('هذا المقعد مقفل');
-    if (seats[i]) return onUser(seats[i].id);
-    if (mySeat === 'host') return toast('أنت المضيف');
-    const s = seats.slice();
-    if (typeof mySeat === 'number') s[mySeat] = null;
-    s[i] = { ...me, score: 0, isMe: true };
-    setSeats(s); setMySeat(i); setSeatMenu(null);
-    setMsgs(m => [...m, { sys: true, text: `${me.name} صعد إلى المقعد ${i + 1}` }]);
+  const sendMsg = async () => {
+    const body = txt.trim();
+    if (!body || !room.id) return;
+    try {
+      await window.SADA_API.insert("chat_messages", { room_id: room.id, sender_id: me.id, message_type: "text", body });
+      setTxt("");
+      await loadRoomState();
+    } catch (error) { toast(error instanceof Error ? error.message : "تعذر إرسال الرسالة"); }
   };
-  const leaveSeat = () => { if (typeof mySeat !== 'number') return; const s = seats.slice(); s[mySeat] = null; setSeats(s); setMySeat(null); };
+  const takeSeat = async (i) => {
+    if (seats[i] === "locked") return toast("هذا المقعد مقفل");
+    if (seats[i]) return onUser(seats[i].id);
+    if (mySeat === "host") return toast("أنت المضيف");
+    try {
+      if (typeof mySeat === "number") await window.SADA_API.remove("room_seats", "room_id=eq." + encodeURIComponent(room.id) + "&seat_number=eq." + mySeat + "&user_id=eq." + encodeURIComponent(me.id));
+      await window.SADA_API.insert("room_seats", { room_id: room.id, seat_number: i, user_id: me.id, seat_status: "occupied" });
+      setMySeat(i); setSeatMenu(null); await loadRoomState();
+    } catch (error) { toast(error instanceof Error ? error.message : "المقعد غير متاح"); }
+  };
+  const leaveSeat = async () => {
+    if (typeof mySeat !== "number") return;
+    try {
+      await window.SADA_API.remove("room_seats", "room_id=eq." + encodeURIComponent(room.id) + "&seat_number=eq." + mySeat + "&user_id=eq." + encodeURIComponent(me.id));
+      setMySeat(null); await loadRoomState();
+    } catch (error) { toast(error instanceof Error ? error.message : "تعذر مغادرة المقعد"); }
+  };
   const sendGift = async (g, qty, target) => {
     const tgt = target || owner;
     if (!g || !tgt?.id || !room?.id) { toast('تعذر تحديد الهدية أو المستلم أو الغرفة'); return; }
@@ -126,7 +167,7 @@ function RoomPage({ room, onClose, onMinimize, onUser }) {
   };
   const roomBackground = window.SADA_ASSETS?.url('room.background.default');
   const seatedUsers = [owner, ...seats.filter(s => s && s !== 'locked' && !s.isMe)];
-  const audience = USERS.slice(0, Math.min(10, online));
+  const audience = [owner, ...roomMembers.filter(u => u.id !== owner.id)];
 
   return (
     <div className="room" style={{ '--rh': room.hue }}>
