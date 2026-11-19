@@ -126,7 +126,6 @@ private fun SadaNativeApp(context: Context) {
         scope.launch {
             busyRoom = true; error = ""
             try {
-                if (agoraAppId.isBlank()) throw IllegalStateException("أضف agora_app_id في إعدادات Supabase العامة أولاً")
                 val roomId = room.getString("id")
                 val channel = room.optString("agora_channel")
                 if (channel.isBlank()) throw IllegalStateException("قناة Agora غير مهيأة لهذه الغرفة")
@@ -135,8 +134,11 @@ private fun SadaNativeApp(context: Context) {
                 if (memberRows.length() == 0) api("/rest/v1/room_members", "POST", JSONObject().put("room_id", roomId).put("user_id", s.userId).put("role", "member"), s.accessToken)
                 val uid = stableAgoraUid(s.userId)
                 val tokenData = JSONObject(api("/functions/v1/agora-token", "POST", JSONObject().put("appId", agoraAppId).put("channel", channel).put("uid", uid), s.accessToken))
+                val resolvedAppId = tokenData.optString("appId", agoraAppId)
+                if (resolvedAppId.isBlank()) throw IllegalStateException("لم يتم ضبط Agora App ID")
+                agoraAppId = resolvedAppId
                 rtcRole = tokenData.optString("role", "subscriber")
-                rtc.join(agoraAppId, tokenData.getString("rtcToken"), channel, uid, rtcRole)
+                rtc.join(resolvedAppId, tokenData.getString("rtcToken"), channel, uid, rtcRole)
                 activeRoom = room
                 muted = false
             } catch (e: Exception) { error = e.message ?: "تعذر دخول الغرفة الصوتية" }
@@ -170,8 +172,11 @@ private fun SadaNativeApp(context: Context) {
                 api("/rest/v1/room_seats", "POST", JSONObject().put("room_id", roomId).put("seat_number", seatNumber).put("user_id", s.userId).put("seat_status", "occupied"), s.accessToken)
                 val uid = stableAgoraUid(s.userId)
                 val tokenData = JSONObject(api("/functions/v1/agora-token", "POST", JSONObject().put("appId", agoraAppId).put("channel", room.optString("agora_channel")).put("uid", uid), s.accessToken))
+                val resolvedAppId = tokenData.optString("appId", agoraAppId)
+                if (resolvedAppId.isBlank()) throw IllegalStateException("لم يتم ضبط Agora App ID")
+                agoraAppId = resolvedAppId
                 rtcRole = tokenData.optString("role", "subscriber")
-                rtc.join(agoraAppId, tokenData.getString("rtcToken"), room.optString("agora_channel"), uid, rtcRole)
+                rtc.join(resolvedAppId, tokenData.getString("rtcToken"), room.optString("agora_channel"), uid, rtcRole)
                 rtcStatus = "تم تفعيل الميكروفون"
             } catch (e: Exception) { error = e.message ?: "تعذر حجز الميكروفون" }
             finally { busyRoom = false }
