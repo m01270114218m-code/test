@@ -1,0 +1,21 @@
+name: Verify Sada web app
+on:
+  push:
+    branches: [test-the]
+  pull_request:
+    branches: [test-the]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Build app
+        run: npm run build
+      - name: Lint app
+        run: npm run lint
