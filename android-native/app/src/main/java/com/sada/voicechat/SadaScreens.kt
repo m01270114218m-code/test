@@ -115,7 +115,7 @@ private fun FrostBanner(title: String, subtitle: String, hue: Color, icon: andro
 
 @Composable
 fun SadaNativeShell(
-    profile: JSONObject, coins: Long, diamonds: Long, rooms: List<JSONObject>, gifts: List<JSONObject>, assets: List<JSONObject>,
+    profile: JSONObject, coins: Long, diamonds: Long, rooms: List<JSONObject>, gifts: List<JSONObject>, assets: List<JSONObject>, vipPackages: List<JSONObject>,
     activeRoom: JSONObject?, rtcRole: String, rtcStatus: String, muted: Boolean, busy: Boolean, error: String,
     onOpenRoom: (JSONObject) -> Unit, onCreateRoom: (String) -> Unit, onLeaveRoom: () -> Unit, onTakeSeat: () -> Unit,
     onToggleMute: () -> Unit, onSignOut: () -> Unit, onBuyAsset: (JSONObject) -> Unit, onEquipAsset: (JSONObject) -> Unit,
@@ -238,7 +238,7 @@ fun SadaNativeShell(
             } else {
                 when (page) {
                     "store" -> NativeStoreScreen(assets, assetCategory, { assetCategory = it }, onBuyAsset, onEquipAsset) { page = "" }
-                    "vip" -> NativeVipScreen(assets, onBuyVip) { page = "" }
+                    "vip" -> NativeVipScreen(vipPackages, onBuyVip) { page = "" }
                     "wallet" -> NativeWalletScreen(coins, diamonds) { page = "" }
                     else -> Column(Modifier.fillMaxSize()) { FrostHeader("الإعدادات", onBack = { page = "" }); ProfileRow("تسجيل الخروج", Icons.Default.Logout, "") { onSignOut() } }
                 }
@@ -344,11 +344,29 @@ private fun NativeStoreScreen(assets: List<JSONObject>, category: String, onCate
 }
 
 @Composable
-private fun NativeVipScreen(assets: List<JSONObject>, onBuy: (JSONObject) -> Unit, onBack: () -> Unit) {
+private fun NativeVipScreen(packages: List<JSONObject>, onBuy: (JSONObject) -> Unit, onBack: () -> Unit) {
     Column(Modifier.fillMaxSize().background(IceBg)) {
         FrostHeader("VIP", "الامتيازات والعضويات", onBack)
         FrostBanner("VIP ROYALE", "إطارات حصرية ودخوليات مميزة", Color(0xFF8957AE), Icons.Default.WorkspacePremium)
-        EmptyNative("باقات VIP", "ستظهر الباقات المنشورة من لوحة الإدارة بعد ربط قائمة الباقات")
+        if (packages.isEmpty()) EmptyNative("لا توجد باقات VIP منشورة", "أضف الباقات من لوحة التحكم لتظهر هنا")
+        else LazyColumn(contentPadding = PaddingValues(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            items(packages) { pack ->
+                IceCard(Modifier.fillMaxWidth()) {
+                    Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.WorkspacePremium, null, tint = IceGold, modifier = Modifier.size(38.dp))
+                        Spacer(Modifier.width(10.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(pack.optString("name"), color = IceInk, fontWeight = FontWeight.Bold)
+                            Text(pack.optInt("duration_days").toString() + " يوم", color = IceMuted, fontSize = 12.sp)
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(pack.optString("price") + " " + pack.optString("currency"), color = IceBlue, fontWeight = FontWeight.Bold)
+                            Button(onClick = { onBuy(pack) }, colors = ButtonDefaults.buttonColors(containerColor = IceBlue)) { Text("اشتراك") }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
