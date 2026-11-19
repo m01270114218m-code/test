@@ -81,7 +81,12 @@
       age: null,
       bio: p.bio || "",
       avatar_url: p.avatar_url,
-      frame: p.metadata && (p.metadata.equipped_frame || p.metadata.frame)
+      frame: p.metadata && (p.metadata.equipped_frame || p.metadata.frame),
+      equipped_entrance: p.metadata?.equipped_entrance,
+      equipped_chat_bubble: p.metadata?.equipped_chat_bubble,
+      equipped_room_background: p.metadata?.equipped_room_background,
+      equipped_room_gift_box: p.metadata?.equipped_room_gift_box,
+      equipped_profile_card_background: p.metadata?.equipped_profile_card_background
     });
     const me = meRow ? mapUser(meRow) : {
       id: userId, name: session.user.phone || "عضو", hue: 210, lv: 1, vip: 0,
