@@ -102,7 +102,8 @@ function App() {
         const created = await window.SADA_API.insert("rooms", { owner_id: me.id, title: title.trim(), room_type: "public", status: "active" });
         const row = Array.isArray(created) ? created[0] : created;
         if (!row?.id) throw new Error("لم يتم إنشاء الغرفة");
-        target = { id: row.id, name: row.title, flag: "eg", vip: 0, count: 0, hue: 210, badges: 0, owner: me.id, glyph: "users", topic: row.description || "دردشة", mine: true, seats: Array(8).fill(null), members: [] };
+        await window.SADA_API.update("rooms", "id=eq." + encodeURIComponent(row.id), { agora_channel: "sada_" + row.id });
+        target = { id: row.id, name: row.title, flag: "eg", vip: 0, count: 0, hue: 210, badges: 0, owner: me.id, glyph: "users", topic: row.description || "دردشة", mine: true, seats: Array(8).fill(null), members: [], agora_channel: "sada_" + row.id };
         await window.SADA_API.refresh();
       }
       if (!target.id) return;
