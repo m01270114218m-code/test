@@ -17,7 +17,7 @@ The existing Supabase project now contains:
 - Admin access policies for assets, rooms, gifts, VIP packages, users, reports, wallets and inventory.
 - New-user trigger creates a profile and zero-balance wallet.
 - Secure RPCs for admin wallet adjustment, user status, gift sending, VIP purchase, asset purchase and asset equipping.
-- Realtime publication entries for rooms, gifts, VIP packages and visual assets.
+- Realtime publication enabled for rooms, gifts, VIP packages and visual assets; the current web catalog refresh uses 30-second polling rather than a live Realtime subscription.
 - A single existing Auth user has been granted `super_admin` so the existing account can access `/admin`.
 
 No demo catalog was inserted. The current project had no room, gift, VIP-package or visual-asset rows when checked. Add the real catalog through the admin dashboard.
