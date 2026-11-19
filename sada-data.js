@@ -61,7 +61,8 @@
       get("wallets?select=coins,diamonds&user_id=eq." + encodeURIComponent(userId) + "&limit=1", token),
       get("user_vips?select=expires_at,package_id&user_id=eq." + encodeURIComponent(userId) + "&expires_at=gt." + encodeURIComponent(new Date().toISOString()) + "&limit=1", token),
       get("room_seats?select=room_id,seat_number,user_id,seat_status&limit=2000", token),
-      get("room_members?select=room_id,user_id,role&limit=2000", token)
+      get("room_members?select=room_id,user_id,role&limit=2000", token),
+      get("vip_packages?select=id,name,duration_days,price,currency,benefits&is_active=eq.true&order=price.asc", token)
     ]);
     const profiles = results[0] || [];
     const meRow = profiles.find(p => p.id === userId);
@@ -111,7 +112,7 @@
       id: null, name: "غرفتي", flag: "eg", vip: 0, count: 0, hue: 215,
       badges: 0, owner: userId, glyph: "snow", topic: "غرفتي", mine: true
     };
-    const data = { me, users, rooms, gifts, wallet, myRoom, vip: results[4] || [] };
+    const data = { me, users, rooms, gifts, wallet, myRoom, vip: results[4] || [], vipPackages: results[7] || [] };
     window.SADA_DATA = data;
     window.SADA_API = {
       rpc: (name, args) => request("/rest/v1/rpc/" + encodeURIComponent(name), { method: "POST", body: JSON.stringify(args) }),
