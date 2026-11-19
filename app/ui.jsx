@@ -84,6 +84,7 @@ function Avatar({ name = '', hue, size = 44, frame, square, radius, onClick, spe
   const h = hue ?? hueOf(name);
   const letter = Array.from(String(name).trim())[0] || '؟';
   const r = square ? (radius ?? size * 0.22) : '50%';
+  const frameAsset = frame && window.SADA_ASSETS?.url(`frame.${frame}`);
   const core = (
     <div style={{
       width: size, height: size, borderRadius: r, flexShrink: 0, position: 'relative', overflow: 'hidden',
@@ -99,7 +100,7 @@ function Avatar({ name = '', hue, size = 44, frame, square, radius, onClick, spe
     <div onClick={onClick} style={{ position: 'relative', flexShrink: 0, cursor: onClick ? 'pointer' : undefined, ...style }}>
       {speaking && <><span className="ripple" style={{ borderRadius: r }} /><span className="ripple d2" style={{ borderRadius: r }} /></>}
       {frame ? (
-        <div style={{ padding: Math.max(2, size * 0.06), borderRadius: r, background: FRAMES[frame], boxShadow: '0 2px 8px rgba(30,80,160,.25)' }}>{core}</div>
+        <div style={{ padding: Math.max(2, size * 0.06), borderRadius: r, background: frameAsset ? `center / cover no-repeat url("${frameAsset}")` : FRAMES[frame], boxShadow: '0 2px 8px rgba(30,80,160,.25)' }}>{core}</div>
       ) : core}
       {muted && <div style={{ position: 'absolute', bottom: -2, left: -2, width: 18, height: 18, borderRadius: 9, background: '#F04461', display: 'grid', placeItems: 'center', border: '2px solid #fff' }}><Ic n="micoff" s={10} c="#fff" w={2.4} /></div>}
     </div>
@@ -141,6 +142,8 @@ function vipColors(lv) {
 }
 function VipTag({ lv = 1, size = 'sm' }) {
   if (!lv) return null;
+  const vipAsset = window.SADA_ASSETS?.url(`vip.badge.${lv}`) || window.SADA_ASSETS?.url('vip.badge');
+  if (vipAsset) return <img src={vipAsset} alt={`VIP${lv}`} style={{ height: size === 'md' ? 24 : 18, maxWidth: 76, objectFit: 'contain' }} />;
   const [a, b, t] = vipColors(lv);
   const big = size === 'md';
   return (
@@ -238,10 +241,11 @@ function GlossBtn({ icon, onClick, size = 36, tone = 'gold' }) {
 /* ---------- Room cover (typographic placeholder art) ---------- */
 function Cover({ title = '', hue = 210, size = 110, radius = 14, glyph }) {
   const words = String(title).split(' ');
+  const coverAsset = window.SADA_ASSETS?.url('room.cover.default');
   return (
     <div style={{
       width: size, height: size, borderRadius: radius, flexShrink: 0, position: 'relative', overflow: 'hidden',
-      background: `radial-gradient(120% 90% at 80% 10%, hsl(${hue} 90% 72%), transparent 55%), radial-gradient(90% 80% at 10% 100%, hsl(${(hue + 40) % 360} 80% 45%), transparent 60%), linear-gradient(160deg, hsl(${hue} 65% 28%), hsl(${(hue + 25) % 360} 70% 14%))`,
+      background: coverAsset ? `center / cover no-repeat url("${coverAsset}")` : `radial-gradient(120% 90% at 80% 10%, hsl(${hue} 90% 72%), transparent 55%), radial-gradient(90% 80% at 10% 100%, hsl(${(hue + 40) % 360} 80% 45%), transparent 60%), linear-gradient(160deg, hsl(${hue} 65% 28%), hsl(${(hue + 25) % 360} 70% 14%))`,
       boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.25)'
     }}>
       <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(rgba(255,255,255,.55) 1px, transparent 1.4px)', backgroundSize: '13px 13px', opacity: .25 }} />
@@ -388,9 +392,10 @@ const GIFTS = [
   { id: 'trophy', n: 'كأس', p: 3000, ic: 'trophy', c: ['#FFF4CF', '#D59E1B'] },
 ];
 function GiftArt({ g, s = 46 }) {
+  const giftAsset = window.SADA_ASSETS?.url(`gift.${g.id}`);
   return (
-    <div style={{ width: s, height: s, borderRadius: '50%', display: 'grid', placeItems: 'center', background: `radial-gradient(circle at 35% 28%, #fff, ${g.c[0]} 40%, ${g.c[1]})`, boxShadow: `0 4px 12px ${g.c[1]}66, inset 0 0 0 2px rgba(255,255,255,.7)` }}>
-      <Ic n={g.ic} s={s * .52} c="#fff" w={1.9} style={{ filter: 'drop-shadow(0 1px 1px rgba(0,0,0,.25))' }} />
+    <div style={{ width: s, height: s, borderRadius: '50%', display: 'grid', placeItems: 'center', overflow: 'hidden', background: `radial-gradient(circle at 35% 28%, #fff, ${g.c[0]} 40%, ${g.c[1]})`, boxShadow: `0 4px 12px ${g.c[1]}66, inset 0 0 0 2px rgba(255,255,255,.7)` }}>
+      {giftAsset ? <img src={giftAsset} alt={g.n} style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <Ic n={g.ic} s={s * .52} c="#fff" w={1.9} style={{ filter: 'drop-shadow(0 1px 1px rgba(0,0,0,.25))' }} />}
     </div>
   );
 }
