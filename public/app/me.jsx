@@ -189,7 +189,7 @@ function StorePage({ onBack, initial = 'frame' }) {
   const [tab, setTab] = useState(initial);
   const [busyKey, setBusyKey] = useState('');
   const categories = [
-    ['frame', 'الإطارات'], ['entrance', 'الدخوليات'], ['page_element', 'فقاعات وعناصر'],
+    ['frame', 'الإطارات'], ['entrance', 'الدخوليات'], ['page_element', 'فقاعات وعناصر'], ['vip', 'شارات VIP'],
     ['room_background', 'خلفيات الغرف'], ['banner', 'البنرات'], ['icon', 'الأيقونات']
   ];
   const registry = window.SADA_ASSETS?.all() || {};
