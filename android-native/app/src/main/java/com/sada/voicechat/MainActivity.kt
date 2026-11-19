@@ -244,10 +244,37 @@ private fun SadaNativeApp(context: Context) {
                                         api("/auth/v1/otp", "POST", JSONObject().put("phone", "+20" + phone.removePrefix("0")).put("create_user", true))
                                         otpSent = true
                                     } else {
+                                        val s = authBody(api("/auth/v1/verify", "POST", JSONObject().put("phone", "+20" + phone.removePrefix("0")).put("token", otp).put("type", "sms")))
+                                        session = s
+                                        prefs.edit().putString("session", JSONObject().put("access", s.accessToken).put("refresh", s.refreshToken).put("uid", s.userId).put("phone", s.phone).put("expires", s.expiresAt).toString()).apply()
+                                    }
+                                } catch (e: Exception) { error = e.message ?: "فشل التحقق" }
+                                finally { busy = false }
+                            }
+                        }, modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) { Text(if (busy) "جارٍ التنفيذ…" else if (otpSent) "تأكيد الدخول" else "إرسال رمز التحقق") }
+                    } else {
+                        OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("البريد الإلكتروني") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email), modifier = Modifier.fillMaxWidth())
+                        OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("كلمة المرور") }, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth())
+                        Button(enabled = !busy && email.contains("@") && password.length >= 6, onClick = {
+                            scope.launch {
+                                busy = true; error = ""
+                                try {
+                                    val s = authBody(api("/auth/v1/token?grant_type=password", "POST", JSONObject().put("email", email).put("password", password)))
+                                    session = s
+                                    prefs.edit().putString("session", JSONObject().put("access", s.accessToken).put("refresh", s.refreshToken).put("uid", s.userId).put("phone", s.phone).put("expires", s.expiresAt).toString()).apply()
+                                } catch (e: Exception) { error = e.message ?: "فشل تسجيل الدخول" }
+                                finally { busy = false }
+                            }
+                        }, modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) { Text(if (busy) "جارٍ الدخول…" else "تسجيل الدخول") }
+                    }
+                    if (error.isNotBlank()) Text(error, color = Color(0xFFFF8A9B), modifier = Modifier.padding(top = 12.dp))
+                    Text("تسجيل الدخول يتم مباشرة عبر Supabase Auth", color = Color.LightGray, fontSize = 12.sp, modifier = Modifier.padding(top = 22.dp))
+                }
+            } else {
                 SadaNativeShell(
                     profile = profile, coins = coins, diamonds = diamonds, rooms = rooms, gifts = gifts,
-                    assets = assets, activeRoom = activeRoom, rtcRole = rtcRole, rtcStatus = rtcStatus,
-                    muted = muted, busy = busyRoom, error = error,
+                    assets = assets, vipPackages = vipPackages, activeRoom = activeRoom, rtcRole = rtcRole,
+                    rtcStatus = rtcStatus, muted = muted, busy = busyRoom, error = error,
                     onOpenRoom = { room ->
                         if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) startRoom(room)
                         else { pendingRoom = room; permissionLauncher.launch(Manifest.permission.RECORD_AUDIO) }
