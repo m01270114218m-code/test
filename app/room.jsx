@@ -166,6 +166,7 @@ function RoomPage({ room, onClose, onMinimize, onUser }) {
     }
   };
   const roomBackground = window.SADA_ASSETS?.url('room.background.default');
+  const chatBubbleAsset = window.SADA_ASSETS?.url('chat.bubble.default');
   const entranceItem = window.SADA_ASSETS?.get('entrance.default');
   const [entranceVisible, setEntranceVisible] = useState(true);
   useEffect(() => { setEntranceVisible(true); const timer = setTimeout(() => setEntranceVisible(false), 5500); return () => clearTimeout(timer); }, [room.id]);
@@ -204,7 +205,7 @@ function RoomPage({ room, onClose, onMinimize, onUser }) {
       <div style={{ display: 'grid', placeItems: 'center', marginTop: 10, position: 'relative' }}>
         <button onClick={() => !isMine && onUser(owner.id)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
           <div style={{ position: 'relative' }}>
-            <Avatar name={owner.name} hue={owner.hue} size={70} frame={owner.frame || 'gold'} speaking={speaking.host || (isMine && speaking.me && micOn)} muted={isMine && !micOn} />
+            <Avatar name={owner.name} hue={owner.hue} size={70} frame={owner.frame || 'gold'} src={owner.avatar_url} speaking={speaking.host || (isMine && speaking.me && micOn)} muted={isMine && !micOn} />
             <span style={{ position: 'absolute', bottom: -4, left: '50%', transform: 'translateX(-50%)', padding: '1px 7px', borderRadius: 8, background: 'linear-gradient(180deg,#FFD45A,#F09A12)', color: '#5A3600', fontSize: 9, fontWeight: 800, whiteSpace: 'nowrap' }}>المضيف</span>
           </div>
           <span style={{ color: '#fff', fontWeight: 700, fontSize: 13, marginTop: 4 }}>{owner.name}</span>
@@ -222,7 +223,7 @@ function RoomPage({ room, onClose, onMinimize, onUser }) {
         ) : m.gift ? (
           <div key={i} className="rmsg gift"><b>{m.u.name}</b> أرسل <GiftArt g={m.gift} s={20} /> {m.gift.n} ×{m.qty} إلى <b>{m.to.name}</b></div>
         ) : (
-          <div key={i} className="rmsg" onClick={() => !m.mine && onUser(m.u.id)}>
+          <div key={i} className="rmsg" style={chatBubbleAsset ? { backgroundImage: "url(" + chatBubbleAsset + ")", backgroundSize: "100% 100%", backgroundRepeat: "no-repeat" } : undefined} onClick={() => !m.mine && onUser(m.u.id)}>
             <span style={{ display: 'inline-flex', gap: 3, verticalAlign: 'middle', marginInlineEnd: 4 }}><LvTag lv={m.u.lv} />{m.u.vip > 0 && <VipTag lv={m.u.vip} />}</span>
             <b style={{ color: m.mine ? '#FFE08A' : '#9FD0FF' }}>{m.u.name}:</b> {m.text}
           </div>
