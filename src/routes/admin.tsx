@@ -59,7 +59,7 @@ function AdminPage() {
       if (target === "gifts") setRows(await selectRows("gifts","select=*&order=name.asc&limit=500"));
       if (target === "vip") setRows(await selectRows("vip_packages","select=*&order=price.asc&limit=200"));
       if (target === "users") setRows(await selectRows("profiles","select=id,username,display_name,avatar_url,level,account_status,created_at&order=created_at.desc&limit=500"));
-      if (target === "rooms") setRows(await selectRows("rooms","select=id,title,owner_id,room_type,status,created_at&order=created_at.desc&limit=500"));
+      if (target === "rooms") setRows(await selectRows("rooms","select=id,title,description,cover_url,owner_id,room_type,status,agora_channel,created_at&order=created_at.desc&limit=500"));
       if (target === "reports") setRows(await selectRows("user_reports","select=*&order=created_at.desc&limit=500"));
       if (target === "settings") {
         const settings = await selectRows("app_settings","select=*&order=setting_key.asc");
