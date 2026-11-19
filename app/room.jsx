@@ -166,12 +166,16 @@ function RoomPage({ room, onClose, onMinimize, onUser }) {
     }
   };
   const roomBackground = window.SADA_ASSETS?.url('room.background.default');
+  const entranceItem = window.SADA_ASSETS?.get('entrance.default');
+  const [entranceVisible, setEntranceVisible] = useState(true);
+  useEffect(() => { setEntranceVisible(true); const timer = setTimeout(() => setEntranceVisible(false), 5500); return () => clearTimeout(timer); }, [room.id]);
   const seatedUsers = [owner, ...seats.filter(s => s && s !== 'locked' && !s.isMe)];
   const audience = [owner, ...roomMembers.filter(u => u.id !== owner.id)];
 
   return (
     <div className="room" style={{ '--rh': room.hue }}>
       <div className="room-bg" style={roomBackground ? { backgroundImage: `url("${roomBackground}")`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined} />
+      {entranceVisible && entranceItem?.url && <div onClick={() => setEntranceVisible(false)} style={{ position: 'absolute', inset: 0, zIndex: 120, display: 'grid', placeItems: 'center', background: 'rgba(3,12,32,.78)' }}>{entranceItem.mime_type?.startsWith('video/') ? <video src={entranceItem.url} autoPlay muted playsInline onEnded={() => setEntranceVisible(false)} style={{ width: '100%', maxHeight: '100%', objectFit: 'contain' }} /> : <img src={entranceItem.url} alt="دخول الغرفة" style={{ width: '100%', maxHeight: '100%', objectFit: 'contain' }} />}</div>}
       <div className="room-snow" />
       <StatusBar />
       {/* header */}
@@ -235,7 +239,7 @@ function RoomPage({ room, onClose, onMinimize, onUser }) {
         {mySeat !== null && <button className="rbtn press" onClick={() => setMicOn(!micOn)}><Ic n={micOn ? 'mic' : 'micoff'} s={20} c={micOn ? '#fff' : '#FF8BA0'} /></button>}
         <button className="rbtn press" onClick={() => setSpeakerOn(!speakerOn)}><Ic n={speakerOn ? 'speaker' : 'mute'} s={20} c="#fff" /></button>
         <button className="rbtn press" onClick={() => setMoreOpen(true)}><Ic n="dots" s={20} c="#fff" /></button>
-        <button className="rbtn gift press" onClick={() => setGiftOpen(true)}><Ic n="gift" s={22} c="#fff" w={2} /></button>
+        <button className="rbtn gift press" onClick={() => setGiftOpen(true)}>{window.SADA_ASSETS?.url('room.gift_box') ? <img src={window.SADA_ASSETS.url('room.gift_box')} alt="صندوق الهدايا" style={{ width: 26, height: 26, objectFit: 'contain' }} /> : <Ic n="gift" s={22} c="#fff" w={2} />}</button>
       </div>
 
       <GiftSheet open={giftOpen} onClose={() => setGiftOpen(false)} targets={seatedUsers} onSend={sendGift} />
