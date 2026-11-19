@@ -15,9 +15,13 @@ Admin dashboard: `/admin` (requires an authenticated account with a row in `publ
 - `vip.badge` or `vip.badge.1` through `vip.badge.8`: VIP badges.
 - `room.cover.default`: default room card/room cover.
 - `room.background.default`: voice room background.
+- `room.gift_box`: custom gift-box button inside the room.
+- `entrance.default`: room-entry artwork; GIFs animate and MP4/WebM files play on entry.
+- `chat.bubble.default`: chat message bubble artwork.
+- `profile.card.background`: profile header/card background.
 - `page.background.default`: main page background.
 
 The asset registry also exposes `window.SADA_ASSETS.url(key, fallback)`, `get(key)`, `all()`, `refresh()`, and `apply(root)`. To make any additional visual element editable, its component must call this resolver with a stable key or use a `data-sada-asset` attribute.
 
 ## Important boundaries
-The asset library is the source of visual files; it does not by itself implement new animation logic or change layout geometry. Entrance effects and additional per-page elements need their component to consume an asset key. Catalog records (gift price, VIP duration/benefits) remain database records, separate from image files. Real-time voice transport requires the configured Agora credentials and app-side RTC integration.
+The asset library is the source of visual files. The store uses `metadata.price` and `metadata.currency`; assets priced at zero are not sold. The purchase and equip operations are validated and recorded by Supabase RPCs. The uploader accepts supported image, animated image, video, audio, Lottie JSON, and 3D model formats up to 100 MB. Some file formats are stored and previewed in the admin panel but still need a dedicated native renderer before they can be shown in every app component. Real-time voice transport still requires configured Agora credentials and native RTC integration.
