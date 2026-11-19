@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useRef, useState } from "react";
-import { sendPhoneOtp, verifyPhoneOtp } from "@/lib/supabase-rest";
+import { sendPhoneOtp, verifyPhoneOtp, signInWithPassword } from "@/lib/supabase-rest";
 import { Smartphone, ArrowRight } from "lucide-react";
 import loopVideo from "@/assets/login-falcon-loop.mp4.asset.json";
 import poster from "@/assets/login-falcon-poster.jpg.asset.json";
@@ -31,8 +31,10 @@ function GoogleLogo() {
 }
 
 function Login() {
-  const [step, setStep] = useState<"home" | "phone" | "otp">("home");
+  const [step, setStep] = useState<"home" | "phone" | "otp" | "email">("home");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [countryCode, setCountryCode] = useState("+20");
   const [busy, setBusy] = useState(false);
   const [authError, setAuthError] = useState("");
@@ -66,6 +68,9 @@ function Login() {
               <button onClick={() => setStep("phone")} className={`${primary} border border-ice-pill-border`}>
                 <Smartphone className="size-5" /> تسجيل الدخول برقم الهاتف
               </button>
+              <button onClick={() => { setAuthError(""); setStep("email"); }} className={`${primary} border border-ice-pill-border`}>
+                تسجيل الدخول بالبريد الإلكتروني
+              </button>
               <div className="flex items-center gap-4 px-10 text-sm text-ice-dim">
                 <span className="h-px flex-1 bg-ice-glass-border" /> أو <span className="h-px flex-1 bg-ice-glass-border" />
               </div>
@@ -78,6 +83,17 @@ function Login() {
                 </button>
               </div>
             </>
+          )}
+
+          {step === "email" && (
+            <div className="space-y-4 rounded-3xl border border-ice-glass-border bg-ice-glass p-5 backdrop-blur-2xl">
+              <button onClick={() => setStep("home")} className="flex items-center gap-1 text-sm text-ice-dim"><ArrowRight className="size-4" /> رجوع</button>
+              <h2 className="text-xl font-bold">الدخول بالبريد الإلكتروني</h2>
+              <input type="email" autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="البريد الإلكتروني" className={`${field} w-full px-4 py-4`} />
+              <input type="password" autoComplete="current-password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="كلمة المرور" className={`${field} w-full px-4 py-4`} />
+              {authError && <p role="alert" className="text-sm text-rose-300">{authError}</p>}
+              <button disabled={!email.includes("@") || password.length < 6 || busy} onClick={async()=>{setBusy(true);setAuthError("");try{await signInWithPassword(email,password);window.location.assign("/Frost%20Voice%20Chat.html");}catch(e){setAuthError(e instanceof Error?e.message:"تعذر تسجيل الدخول.");}finally{setBusy(false);}}} className={primary}>{busy?"جارٍ الدخول…":"تسجيل الدخول"}</button>
+            </div>
           )}
 
           {step === "phone" && (
