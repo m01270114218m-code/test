@@ -33,5 +33,6 @@ dependencies {
     implementation("io.coil-kt:coil-gif:2.7.0")
     implementation("io.agora.rtc:full-sdk:4.6.3")
     implementation("androidx.core:core-ktx:1.15.0")
+    implementation("androidx.webkit:webkit:1.12.1")
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
