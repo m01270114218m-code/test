@@ -150,11 +150,12 @@ function ProfilePage({ uid, onBack, onChat, onRoom }) {
   const u = userById(uid);
   const fol = following.includes(uid);
   const room = ROOMS.find(r => r.owner === uid);
+  const profileCardBackground = window.SADA_ASSETS?.url('profile.card.background');
   const [tab, setTab] = useState('honor');
   return (
     <div className="page" style={{ background: '#EAF3FF' }}>
       <div className="page-body" style={{ paddingBottom: 90 }}>
-        <div style={{ position: 'relative', height: 400, background: `radial-gradient(90% 70% at 70% 30%, hsl(${u.hue} 70% 60%), hsl(${u.hue} 60% 22%))`, overflow: 'hidden' }}>
+        <div style={{ position: 'relative', height: 400, background: `radial-gradient(90% 70% at 70% 30%, hsl(${u.hue} 70% 60%), hsl(${u.hue} 60% 22%))`, backgroundImage: profileCardBackground ? 'url(' + profileCardBackground + ')' : undefined, backgroundSize: 'cover', backgroundPosition: 'center', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(rgba(255,255,255,.5) 1px,transparent 1.5px)', backgroundSize: '18px 18px', opacity: .18 }} />
           <div style={{ position: 'absolute', right: -40, top: 40, fontFamily: 'var(--display)', fontWeight: 900, fontSize: 260, color: 'rgba(255,255,255,.08)', lineHeight: 1 }}>{Array.from(u.name)[0]}</div>
           <StatusBar />
@@ -168,7 +169,7 @@ function ProfilePage({ uid, onBack, onChat, onRoom }) {
             <Cover title={room.name} hue={room.hue} size={32} radius={8} />
           </button>}
           <div style={{ position: 'absolute', right: 16, bottom: 26, color: '#fff' }}>
-            <Avatar name={u.name} hue={u.hue} size={96} frame={u.frame || 'ice'} />
+            <Avatar name={u.name} hue={u.hue} size={96} frame={u.frame || 'ice'} src={u.avatar_url} />
             <div style={{ fontFamily: 'var(--display)', fontWeight: 800, fontSize: 24, marginTop: 8, textShadow: '0 2px 6px rgba(0,0,0,.35)' }}>{u.name}</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, direction: 'rtl' }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--latin)', fontWeight: 700, fontSize: 15 }}><Ic n="id" s={16} c="#C8B6FF" />{u.id}<Ic n="copy" s={13} c="#fff" /></span>
