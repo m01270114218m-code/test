@@ -357,10 +357,11 @@ const roomById = (id) => ROOMS.find(r => r.id === id);
 let MY_ROOM = { id: null, name: "غرفتي", flag: "eg", vip: 0, count: 0, hue: 215, badges: 0, owner: null, glyph: "snow", topic: "غرفتي", mine: true };
 let GIFTS = [];
 function GiftArt({ g, s = 46 }) {
-  const giftAsset = window.SADA_ASSETS?.url(`gift.${g.id}`) || g.image_url;
+  const giftRecord = window.SADA_ASSETS?.get(`gift.${g.id}`);
+  const giftAsset = giftRecord?.url || g.image_url;
   return (
     <div style={{ width: s, height: s, borderRadius: '50%', display: 'grid', placeItems: 'center', overflow: 'hidden', background: `radial-gradient(circle at 35% 28%, #fff, ${g.c[0]} 40%, ${g.c[1]})`, boxShadow: `0 4px 12px ${g.c[1]}66, inset 0 0 0 2px rgba(255,255,255,.7)` }}>
-      {giftAsset ? <img src={giftAsset} alt={g.n} style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <Ic n={g.ic} s={s * .52} c="#fff" w={1.9} style={{ filter: 'drop-shadow(0 1px 1px rgba(0,0,0,.25))' }} />}
+      {giftAsset ? (giftRecord?.mime_type?.startsWith("video/") ? <video src={giftAsset} autoPlay muted loop playsInline style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <img src={giftAsset} alt={g.n} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />) : <Ic n={g.ic} s={s * .52} c="#fff" w={1.9} style={{ filter: 'drop-shadow(0 1px 1px rgba(0,0,0,.25))' }} />}
     </div>
   );
 }
