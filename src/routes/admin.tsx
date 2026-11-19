@@ -149,7 +149,7 @@ function AdminPage() {
     e.preventDefault(); setLoading(true); setError("");
     try {
       const values={title:roomForm.title,description:roomForm.description,room_type:roomForm.room_type,cover_url:roomForm.cover_url||null,status:"active",...(roomEditingId?{}:{owner_id:session?.user.id})};
-      if(roomEditingId) await updateRows("rooms",`id=eq.${roomEditingId}`,values); else await insertRow("rooms",values);
+      if(roomEditingId) await updateRows("rooms",`id=eq.${roomEditingId}`,values); else { const created=await insertRow("rooms",values); const row=Array.isArray(created)?created[0]:created; if(row?.id) await updateRows("rooms",`id=eq.${row.id}`,{agora_channel:"sada_"+row.id}); }
       setRoomForm({title:"",description:"",room_type:"public",cover_url:""}); setRoomEditingId(null);
       setNotice("تم حفظ الغرفة."); await loadTab("rooms");
     } catch(e) { fail(e); } finally { setLoading(false); }
