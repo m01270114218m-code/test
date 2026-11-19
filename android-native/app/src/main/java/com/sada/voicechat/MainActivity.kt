@@ -158,7 +158,7 @@ private fun SadaNativeApp(context: Context) {
                                 try {
                                     val s = authBody(api("/auth/v1/token?grant_type=password", "POST", JSONObject().put("email", email).put("password", password)))
                                     session = s
-                                    prefs.edit().putString("session", JSONObject().put("access", s.accessToken).put("refresh", s.refreshToken).put("uid", s.userId).put("phone", s.phone).toString()).apply()
+                                    prefs.edit().putString("session", JSONObject().put("access", s.accessToken).put("refresh", s.refreshToken).put("uid", s.userId).put("phone", s.phone).put("expires", s.expiresAt).toString()).apply()
                                 } catch (e: Exception) { error = e.message ?: "فشل تسجيل الدخول" }
                                 finally { busy = false }
                             }
