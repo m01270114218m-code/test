@@ -331,11 +331,14 @@ private fun NativeStoreScreen(assets: List<JSONObject>, category: String, onCate
             items(shown) { asset ->
                 Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color.White).padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
                     val path = asset.optString("storage_path")
+                    val meta = asset.optJSONObject("metadata") ?: JSONObject()
+                    val price = meta.optString("price", "0")
+                    val currency = meta.optString("currency", "coins")
                     val url = "https://pkqcxcfuelubonlkjgoq.supabase.co/storage/v1/object/public/sada-app-assets/" + path
                     if (path.isNotBlank() && asset.optString("mime_type").startsWith("image/")) AsyncImage(url, null, Modifier.size(68.dp).clip(RoundedCornerShape(12.dp)), contentScale = ContentScale.Crop)
                     else Box(Modifier.size(68.dp).background(IceBg, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Icon(Icons.Default.AutoAwesome, null, tint = IceBlue) }
                     Spacer(Modifier.width(10.dp))
-                    Column(Modifier.weight(1f)) { Text(asset.optString("title"), color = IceInk, fontWeight = FontWeight.Bold); Text(asset.optString("category"), color = IceMuted, fontSize = 11.sp); Text(asset.optString("price", "مجاني") + " " + asset.optString("currency"), color = IceBlue, fontSize = 12.sp) }
+                    Column(Modifier.weight(1f)) { Text(asset.optString("title"), color = IceInk, fontWeight = FontWeight.Bold); Text(asset.optString("category"), color = IceMuted, fontSize = 11.sp); Text(if (price == "0") "مجاني" else "$price $currency", color = IceBlue, fontSize = 12.sp) }
                     Column(horizontalAlignment = Alignment.End) { TextButton(onClick = { onBuy(asset) }) { Text("شراء") }; TextButton(onClick = { onEquip(asset) }) { Text("تجهيز") } }
                 }
             }
