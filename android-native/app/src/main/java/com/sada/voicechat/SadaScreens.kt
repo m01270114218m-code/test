@@ -155,7 +155,7 @@ fun SadaNativeShell(
                                 }
                                 when (partyTab) {
                                     "mine" -> Column(Modifier.verticalScroll(rememberScrollState()).padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                        FrostBanner("غرفتي الصوتية", "ابدأ غرفة جديدة وادعُ أصدقاءك", Color(0xFF4B93E8), Icons.Default.Castle)
+                                        FrostBanner("غرفتي الصوتية", "ابدأ غرفة جديدة وادعُ أصدقاءك", Color(0xFF4B93E8), Icons.Default.Home)
                                         Button(onClick = { createDialog = true }, Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = IceBlue)) { Icon(Icons.Default.Add, null); Spacer(Modifier.width(6.dp)); Text("إنشاء غرفة") }
                                         rooms.filter { it.optString("owner_id") == profile.optString("id") }.forEach { FrostRoomCard(it) { onOpenRoom(it) } }
                                     }
@@ -209,15 +209,15 @@ fun SadaNativeShell(
                             }
                             FrostBanner("VIP", "افتح الامتيازات والإطارات والدخوليات", Color(0xFF8055A9), Icons.Default.WorkspacePremium)
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                QuickAction("المتجر", Icons.Default.Storefront) { page = "store" }
-                                QuickAction("VIP", Icons.Default.WorkspacePremium) { page = "vip" }
-                                QuickAction("المحفظة", Icons.Default.AccountBalanceWallet) { page = "wallet" }
+                                QuickAction("المتجر", Icons.Default.Storefront, Modifier.weight(1f)) { page = "store" }
+                                QuickAction("VIP", Icons.Default.WorkspacePremium, Modifier.weight(1f)) { page = "vip" }
+                                QuickAction("المحفظة", Icons.Default.AccountBalanceWallet, Modifier.weight(1f)) { page = "wallet" }
                             }
                             IceCard(Modifier.fillMaxWidth()) {
                                 Column(Modifier.padding(horizontal = 14.dp)) {
-                                    ProfileRow("المحفظة", Icons.Default.Wallet, "$coins عملة · $diamonds ألماس") { page = "wallet" }
+                                    ProfileRow("المحفظة", Icons.Default.AccountBalanceWallet, "$coins عملة · $diamonds ألماس") { page = "wallet" }
                                     ProfileRow("المتجر", Icons.Default.Store, "الإطارات والهدايا والدخوليات") { page = "store" }
-                                    ProfileRow("VIP", Icons.Default.Crown, "الباقات والامتيازات") { page = "vip" }
+                                    ProfileRow("VIP", Icons.Default.WorkspacePremium, "الباقات والامتيازات") { page = "vip" }
                                     ProfileRow("الإعدادات", Icons.Default.Settings, "الحساب والتفضيلات") { page = "settings" }
                                     ProfileRow("تسجيل الخروج", Icons.Default.Logout, "") { onSignOut() }
                                 }
@@ -226,7 +226,7 @@ fun SadaNativeShell(
                     }
                 }
                 Row(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(94.dp).background(Brush.verticalGradient(listOf(Color(0xFF5BA8F2), Color(0xFF1F68C8)))).padding(horizontal = 28.dp, vertical = 10.dp), horizontalArrangement = Arrangement.SpaceAround, verticalAlignment = Alignment.CenterVertically) {
-                    listOf(Triple("party", "حفلة", Icons.Default.Castle), Triple("msg", "رسالة", Icons.Default.Mail), Triple("me", "أنا", Icons.Default.AccountCircle)).forEach { (id, label, icon) ->
+                    listOf(Triple("party", "حفلة", Icons.Default.Home), Triple("msg", "رسالة", Icons.Default.Mail), Triple("me", "أنا", Icons.Default.AccountCircle)).forEach { (id, label, icon) ->
                         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clickable { tab = id; page = "" }) {
                             Icon(icon, null, tint = Color.White, modifier = Modifier.size(if (tab == id) 35.dp else 28.dp))
                             Text(label, color = Color.White, fontSize = 12.sp, fontWeight = if (tab == id) FontWeight.Bold else FontWeight.Normal)
@@ -249,8 +249,8 @@ fun SadaNativeShell(
 }
 
 @Composable
-private fun QuickAction(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
-    IceCard(Modifier.weight(1f).clickable(onClick = onClick)) { Column(Modifier.fillMaxWidth().padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) { Icon(icon, null, tint = IceBlue, modifier = Modifier.size(25.dp)); Text(label, color = IceInk, fontWeight = FontWeight.Bold, fontSize = 12.sp) } }
+private fun QuickAction(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    IceCard(modifier.clickable(onClick = onClick)) { Column(Modifier.fillMaxWidth().padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) { Icon(icon, null, tint = IceBlue, modifier = Modifier.size(25.dp)); Text(label, color = IceInk, fontWeight = FontWeight.Bold, fontSize = 12.sp) } }
 }
 
 @Composable
@@ -289,7 +289,7 @@ private fun NativeRoomScreen(room: JSONObject, name: String, avatar: String, rol
                     FrostAvatar(name, avatar, 64.dp, true)
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) { Text(name + " · المضيف", color = IceInk, fontWeight = FontWeight.Bold); Text("مستمعون ومقاعد صوتية", color = IceMuted, fontSize = 12.sp) }
-                    Icon(Icons.Default.Crown, null, tint = IceGold, modifier = Modifier.size(26.dp))
+                    Icon(Icons.Default.WorkspacePremium, null, tint = IceGold, modifier = Modifier.size(26.dp))
                 }
             }
             Spacer(Modifier.height(18.dp))
