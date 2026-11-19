@@ -348,52 +348,15 @@ function Sheet({ open, onClose, children, dark, h }) {
 }
 
 /* ---------- Data ---------- */
-const ME0 = { id: 1031437, name: 'HAMO', hue: 212, lv: 3, vip: 0, following: 1, fans: 1, charm: 0, flag: 'eg', g: 'm', age: 26, bio: 'مرحباً بكم في غرفتي ❄' };
-const USERS = [
-  { id: 10107, name: 'حلا', hue: 340, flag: 'eg', lv: 27, vip: 6, g: 'f', age: 26, follows: 65, fans: 237, charm: '26.8M', friends: 61, frame: 'gold', bio: 'لا أشبه أحداً.. أنا نوع فريد للغاية', badges: 4 },
-  { id: 1000210, name: 'User10', hue: 200, flag: 'eg', lv: 2, vip: 0, g: 'm', age: 21, follows: 3, fans: 1, charm: '120', friends: 1, bio: 'هذا الشخص كسول جدًا ولم يكتب أي شيء', badges: 0 },
-  { id: 2002931, name: 'كايان', hue: 222, flag: 'iq', lv: 41, vip: 8, g: 'm', age: 29, follows: 120, fans: 5400, charm: '88.1M', friends: 320, frame: 'ice', bio: 'ملك الثروة ❄ الغرفة رقم 1', badges: 5 },
-  { id: 3017285, name: 'نور', hue: 300, flag: 'eg', lv: 19, vip: 5, g: 'f', age: 23, follows: 80, fans: 1900, charm: '12.4M', friends: 140, frame: 'violet', bio: 'صوتك يونسني', badges: 3 },
-  { id: 4410882, name: 'سيف', hue: 30, flag: 'sa', lv: 12, vip: 3, g: 'm', age: 31, follows: 40, fans: 300, charm: '1.2M', friends: 52, bio: 'هدوء واحترام', badges: 2 },
-  { id: 5520114, name: 'ليان', hue: 170, flag: 'jo', lv: 15, vip: 4, g: 'f', age: 22, follows: 99, fans: 870, charm: '4.6M', friends: 77, frame: 'rose', bio: 'مذيعة في غرفة ديوان الأردن', badges: 2 },
-  { id: 6630091, name: 'مازن', hue: 250, flag: 'ae', lv: 22, vip: 6, g: 'm', age: 34, follows: 33, fans: 1400, charm: '9.9M', friends: 88, frame: 'gold', bio: 'وكيل رسمي معتمد', badges: 4 },
-  { id: 7740023, name: 'رهف', hue: 320, flag: 'ma', lv: 9, vip: 2, g: 'f', age: 20, follows: 210, fans: 160, charm: '640K', friends: 40, bio: 'من المغرب بكل حب', badges: 1 },
-  { id: 8850776, name: 'عمر', hue: 190, flag: 'dz', lv: 7, vip: 1, g: 'm', age: 27, follows: 12, fans: 44, charm: '90K', friends: 15, bio: 'جزائري وأفتخر', badges: 1 },
-  { id: 9960310, name: 'ياسمين', hue: 280, flag: 'lb', lv: 17, vip: 5, g: 'f', age: 25, follows: 70, fans: 990, charm: '7.1M', friends: 66, frame: 'violet', bio: 'أغاني فيروز كل ليلة', badges: 3 },
-  { id: 1188204, name: 'خالد', hue: 210, flag: 'kw', lv: 30, vip: 7, g: 'm', age: 38, follows: 55, fans: 2600, charm: '33.0M', friends: 130, frame: 'gold', bio: 'الداعم الأول', badges: 5 },
-];
+let ME0 = { id: null, name: "عضو", hue: 212, lv: 1, vip: 0, following: 0, fans: 0, charm: 0, flag: "eg", g: "m", age: null, bio: "" };
+let USERS = [];
 const userById = (id) => USERS.find(u => u.id === id);
-
-const ROOMS = [
-  { id: 3017285, name: 'عسل بالشحن ومحلي', flag: 'eg', vip: 7, count: 24, hue: 18, badges: 4, owner: 10107, glyph: 'heart', topic: 'دردشة' },
-  { id: 3011902, name: 'وك كل العرب', flag: 'eg', vip: 5, count: 21, hue: 196, badges: 0, owner: 3017285, glyph: 'globe', topic: 'تعارف' },
-  { id: 3009921, name: 'باريس', flag: 'sy', vip: 4, count: 22, hue: 42, badges: 2, owner: 9960310, glyph: 'star', topic: 'افتتاح' },
-  { id: 3004410, name: 'أمسية دينية', flag: 'eg', vip: 6, count: 24, hue: 262, badges: 1, owner: 6630091, glyph: 'pin', topic: 'قرآن وأناشيد' },
-  { id: 3002201, name: 'ديوان الأردن', flag: 'jo', vip: 4, count: 17, hue: 150, badges: 2, owner: 5520114, glyph: 'crown', topic: 'شعر' },
-  { id: 3001190, name: 'سهرة الخليج', flag: 'ae', vip: 6, count: 31, hue: 210, badges: 3, owner: 1188204, glyph: 'diamond', topic: 'غناء' },
-  { id: 3000881, name: 'ليالي بغداد', flag: 'iq', vip: 8, count: 46, hue: 226, badges: 4, owner: 2002931, glyph: 'castle', topic: 'مقام' },
-  { id: 3000552, name: 'انتظرونا الافتتاح', flag: 'ma', vip: 2, count: 9, hue: 330, badges: 0, owner: 7740023, glyph: 'rocket', topic: 'قريباً' },
-  { id: 3000123, name: 'شباب الجزائر', flag: 'dz', vip: 1, count: 12, hue: 120, badges: 1, owner: 8850776, glyph: 'users', topic: 'ألعاب' },
-];
+let ROOMS = [];
 const roomById = (id) => ROOMS.find(r => r.id === id);
-const MY_ROOM = { id: 1031437, name: 'HAMO', flag: 'eg', vip: 0, count: 0, hue: 215, badges: 0, owner: 1031437, glyph: 'snow', topic: 'غرفتي', mine: true };
-
-const GIFTS = [
-  { id: 'rose', n: 'وردة', p: 1, ic: 'rose', c: ['#FFD1DF', '#E2366F'] },
-  { id: 'heart', n: 'قلب', p: 10, ic: 'heart', c: ['#FFD6E2', '#F0466E'] },
-  { id: 'ice', n: 'آيس كريم', p: 29, ic: 'ice', c: ['#E1F2FF', '#4A9BF0'] },
-  { id: 'star', n: 'نجمة', p: 66, ic: 'star', c: ['#FFF3C4', '#F0A818'] },
-  { id: 'crown', n: 'تاج', p: 199, ic: 'crown', c: ['#FFF0B8', '#D3920F'] },
-  { id: 'ring', n: 'خاتم', p: 520, ic: 'ring', c: ['#E8F3FF', '#5B8FE0'] },
-  { id: 'car', n: 'سيارة', p: 1999, ic: 'car', c: ['#DDEBFF', '#2C62C9'] },
-  { id: 'rocket', n: 'صاروخ', p: 4999, ic: 'rocket', c: ['#FFE0CF', '#E8622B'] },
-  { id: 'castle', n: 'قلعة الجليد', p: 9999, ic: 'castle', c: ['#E8F6FF', '#3A8BE8'] },
-  { id: 'diamond', n: 'ماسة', p: 300, ic: 'diamond', c: ['#DCF4FF', '#1EA0E6'] },
-  { id: 'medal', n: 'وسام', p: 888, ic: 'medal', c: ['#FFF0C2', '#C98C12'] },
-  { id: 'trophy', n: 'كأس', p: 3000, ic: 'trophy', c: ['#FFF4CF', '#D59E1B'] },
-];
+let MY_ROOM = { id: null, name: "غرفتي", flag: "eg", vip: 0, count: 0, hue: 215, badges: 0, owner: null, glyph: "snow", topic: "غرفتي", mine: true };
+let GIFTS = [];
 function GiftArt({ g, s = 46 }) {
-  const giftAsset = window.SADA_ASSETS?.url(`gift.${g.id}`);
+  const giftAsset = window.SADA_ASSETS?.url(`gift.${g.id}`) || g.image_url;
   return (
     <div style={{ width: s, height: s, borderRadius: '50%', display: 'grid', placeItems: 'center', overflow: 'hidden', background: `radial-gradient(circle at 35% 28%, #fff, ${g.c[0]} 40%, ${g.c[1]})`, boxShadow: `0 4px 12px ${g.c[1]}66, inset 0 0 0 2px rgba(255,255,255,.7)` }}>
       {giftAsset ? <img src={giftAsset} alt={g.n} style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <Ic n={g.ic} s={s * .52} c="#fff" w={1.9} style={{ filter: 'drop-shadow(0 1px 1px rgba(0,0,0,.25))' }} />}
@@ -401,7 +364,18 @@ function GiftArt({ g, s = 46 }) {
   );
 }
 
-const CHAT_LINES = ['مساء الخير يا جماعة 🌙', 'نورتوا الغرفة', 'الصوت واضح؟', 'أهلاً وسهلاً', 'تحية لكل الحضور', 'مين يغني الجاية؟', 'الله الله', 'شكراً على الهدية ❤', 'نزلوا المايك شوي', 'منورين يا غاليين', 'هههه', 'تسلم يا ذوق'];
+const CHAT_LINES = [];
+
+
+window.addEventListener('sada-data-ready', (event) => {
+  const data = event.detail || {};
+  USERS = data.users || [];
+  ROOMS = data.rooms || [];
+  GIFTS = data.gifts || [];
+  ME0 = data.me || ME0;
+  MY_ROOM = data.myRoom || MY_ROOM;
+  Object.assign(window, { ME0, USERS, userById, ROOMS, roomById, MY_ROOM, GIFTS });
+});
 
 Object.assign(window, {
   AppCtx, useApp, Ic, vipColors, hueOf, fmt, Avatar, Flag, FLAGS, VipTag, LvTag, GenderTag, Coin, Diamond, SkyBackdrop, StatusBar,
