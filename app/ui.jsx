@@ -84,7 +84,8 @@ function Avatar({ name = '', hue, size = 44, frame, square, radius, onClick, spe
   const h = hue ?? hueOf(name);
   const letter = Array.from(String(name).trim())[0] || '؟';
   const r = square ? (radius ?? size * 0.22) : '50%';
-  const frameAsset = frame && window.SADA_ASSETS?.url(`frame.${frame}`);
+  const frameKey = frame ? (String(frame).startsWith('frame.') ? String(frame) : `frame.${frame}`) : null;
+  const frameAsset = frameKey && window.SADA_ASSETS?.url(frameKey);
   const core = (
     <div style={{
       width: size, height: size, borderRadius: r, flexShrink: 0, position: 'relative', overflow: 'hidden',
