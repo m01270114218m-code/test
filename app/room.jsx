@@ -108,17 +108,21 @@ function RoomPage({ room, onClose, onMinimize, onUser }) {
     setMsgs(m => [...m, { sys: true, text: `${me.name} صعد إلى المقعد ${i + 1}` }]);
   };
   const leaveSeat = () => { if (typeof mySeat !== 'number') return; const s = seats.slice(); s[mySeat] = null; setSeats(s); setMySeat(null); };
-  const sendGift = (g, qty, target) => {
-    const cost = g.p * qty;
-    if (coins < cost) { toast('رصيد غير كافٍ — اشحن من المحفظة'); return; }
-    setCoins(coins - cost); pushLog(`هدية ${g.n} ×${qty}`, -cost);
+  const sendGift = async (g, qty, target) => {
     const tgt = target || owner;
-    if (tgt.id === owner.id) setHostScore(v => v + cost);
-    else setSeats(s => s.map(x => (x && x !== 'locked' && x.id === tgt.id) ? { ...x, score: (x.score || 0) + cost } : x));
-    if (tgt.id === me.id) setDiamonds(diamonds + cost);
-    setMsgs(m => [...m, { gift: g, qty, to: tgt, u: me }]);
-    setFx({ g, qty, key: Date.now() }); setGiftOpen(false);
-    setTimeout(() => setFx(null), 2200);
+    if (!g || !tgt?.id || !room?.id) { toast('تعذر تحديد الهدية أو المستلم أو الغرفة'); return; }
+    if (!window.SADA_API?.rpc) { toast('خدمة الهدايا غير متاحة حالياً'); return; }
+    try {
+      await window.SADA_API.rpc('send_gift', { p_gift_id: g.id, p_receiver_id: tgt.id, p_room_id: room.id, p_quantity: qty });
+      await window.SADA_API.refresh();
+      const cost = g.p * qty;
+      pushLog(`هدية ${g.n} ×${qty}`, -cost);
+      setMsgs(m => [...m, { gift: g, qty, to: tgt, u: me }]);
+      setFx({ g, qty, key: Date.now() }); setGiftOpen(false);
+      setTimeout(() => setFx(null), 2200);
+    } catch (error) {
+      toast(error instanceof Error ? error.message : 'فشل إرسال الهدية');
+    }
   };
   const roomBackground = window.SADA_ASSETS?.url('room.background.default');
   const seatedUsers = [owner, ...seats.filter(s => s && s !== 'locked' && !s.isMe)];
