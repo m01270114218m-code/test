@@ -133,12 +133,26 @@ function WalletPage({ onBack }) {
 }
 
 /* ---------- VIP ---------- */
-const VIP_PERKS = [['frame', 'إطار صورة حصري'], ['car', 'سيارة دخول'], ['crown', 'شارة VIP'], ['chat', 'فقاعة دردشة'], ['shield', 'مضاد للطرد'], ['eye', 'دخول خفي'], ['star', 'ترتيب أعلى'], ['gift', 'هدايا حصرية']];
 function VipPage({ onBack }) {
-  const { coins, setCoins, me, setMe, toast } = useApp();
-  const [lv, setLv] = useState(Math.max(1, me.vip || 1));
-  const price = lv * lv * 3000;
-  const [a, b] = vipColors(lv);
+  const { me, toast } = useApp();
+  const packages = window.SADA_DATA?.vipPackages || [];
+  const [selectedId, setSelectedId] = useState(packages[0]?.id || '');
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { if (!selectedId && packages.length) setSelectedId(packages[0].id); }, [selectedId, packages.length]);
+  const selected = packages.find(p => p.id === selectedId);
+  const perks = selected?.benefits && typeof selected.benefits === 'object' ? Object.entries(selected.benefits) : [];
+  const purchase = async () => {
+    if (!selected) return toast('لا توجد باقة VIP متاحة حالياً');
+    setBusy(true);
+    try {
+      await window.SADA_API.rpc('purchase_vip', { p_package_id: selected.id });
+      await window.SADA_API.refresh();
+      toast('تم تفعيل باقة VIP بنجاح');
+    } catch (error) {
+      toast(error instanceof Error ? error.message : 'تعذر تفعيل VIP');
+    } finally { setBusy(false); }
+  };
+  const vipAsset = window.SADA_ASSETS?.url('vip.badge');
   return (
     <div className="page" style={{ background: 'linear-gradient(180deg,#081B45,#123A86 50%,#0B275E)' }}>
       <StatusBar />
@@ -146,30 +160,24 @@ function VipPage({ onBack }) {
         <button className="iconbtn press" onClick={onBack}><Ic n="back" s={22} c="#fff" w={2.2} /></button>
         <div style={{ flex: 1, textAlign: 'center', fontWeight: 800, fontSize: 18 }}>VIP</div><div style={{ width: 36 }} />
       </div>
-      <div style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '8px 14px' }} className="noscroll">
-        {[1, 2, 3, 4, 5, 6, 7, 8].map(n => <button key={n} onClick={() => setLv(n)} style={{ flexShrink: 0, padding: '6px 14px', borderRadius: 16, fontFamily: 'var(--latin)', fontWeight: 800, fontStyle: 'italic', color: lv === n ? '#0B275E' : '#9EC3FF', background: lv === n ? 'linear-gradient(180deg,#fff,#BFDFFF)' : 'rgba(255,255,255,.08)' }}>VIP{n}</button>)}
-      </div>
-      <div className="page-body" style={{ padding: '6px 14px 20px' }}>
-        <div style={{ height: 190, borderRadius: 20, position: 'relative', overflow: 'hidden', background: `radial-gradient(80% 90% at 50% 40%, ${b}, #0A2050)`, display: 'grid', placeItems: 'center', boxShadow: `inset 0 0 0 2px ${a}aa` }}>
-          <div style={{ width: 120, height: 120, borderRadius: '50%', background: `radial-gradient(circle at 35% 30%, #fff, ${a} 40%, ${b})`, display: 'grid', placeItems: 'center', boxShadow: `0 0 40px ${a}` }}>
-            <Ic n="crown" s={56} c="#fff" w={1.4} />
+      <div className="page-body" style={{ padding: '12px 14px 20px' }}>
+        {packages.length === 0 ? <div style={{ padding: 24, textAlign: 'center', color: '#CFE2FF' }}>لا توجد باقات VIP منشورة حالياً. أضف الباقات من لوحة الإدارة.</div> : <>
+          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '8px 0' }} className="noscroll">
+            {packages.map(p => <button key={p.id} onClick={() => setSelectedId(p.id)} style={{ flexShrink: 0, padding: '8px 14px', borderRadius: 16, fontWeight: 800, color: selectedId === p.id ? '#0B275E' : '#9EC3FF', background: selectedId === p.id ? 'linear-gradient(180deg,#fff,#BFDFFF)' : 'rgba(255,255,255,.08)' }}>{p.name}</button>)}
           </div>
-          <div style={{ position: 'absolute', bottom: 14, fontFamily: 'var(--latin)', fontStyle: 'italic', fontWeight: 900, fontSize: 30, color: '#fff', textShadow: '0 2px 10px rgba(0,0,0,.4)' }}>VIP {lv}</div>
-        </div>
-        <div style={{ color: '#CFE2FF', fontWeight: 700, margin: '18px 4px 10px' }}>الامتيازات ({Math.min(8, lv + 2)}/8)</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10 }}>
-          {VIP_PERKS.map(([ic, n], i) => {
-            const on = i < lv + 2;
-            return <div key={i} style={{ borderRadius: 14, padding: '12px 4px', background: on ? 'rgba(255,255,255,.1)' : 'rgba(255,255,255,.03)', textAlign: 'center', color: on ? '#fff' : '#5F7BB0' }}>
-              <div style={{ width: 42, height: 42, margin: '0 auto 6px', borderRadius: 21, display: 'grid', placeItems: 'center', background: on ? `linear-gradient(135deg,${a},${b})` : 'rgba(255,255,255,.06)' }}><Ic n={on ? ic : 'lock'} s={20} c="#fff" /></div>
-              <span style={{ fontSize: 11 }}>{n}</span>
-            </div>;
-          })}
-        </div>
+          {selected && <div style={{ marginTop: 12, borderRadius: 20, padding: 20, background: 'rgba(255,255,255,.08)', textAlign: 'center' }}>
+            {vipAsset ? <img src={vipAsset} alt="VIP" style={{ width: 112, height: 112, objectFit: 'contain', margin: '0 auto' }} /> : <Ic n="crown" s={64} c="#FFD45A" />}
+            <div style={{ color: '#fff', fontWeight: 900, fontSize: 25, marginTop: 8 }}>{selected.name}</div>
+            <div style={{ color: '#CFE2FF', marginTop: 6 }}>{selected.duration_days} يوم</div>
+            <div style={{ color: '#FFD45A', fontWeight: 900, fontSize: 24, marginTop: 10 }}>{fmt(selected.price)} {selected.currency === 'diamonds' ? 'ألماس' : 'عملة'}</div>
+          </div>}
+          <div style={{ color: '#CFE2FF', fontWeight: 700, margin: '18px 4px 10px' }}>امتيازات الباقة</div>
+          {perks.length ? <div style={{ display: 'grid', gap: 8 }}>{perks.map(([key,value]) => <div key={key} style={{ padding: 12, borderRadius: 12, background: 'rgba(255,255,255,.08)', color: '#fff' }}>{String(value)}</div>)}</div> : <div style={{ color: '#9EC3FF', fontSize: 13 }}>سيتم عرض الامتيازات التي يحددها المدير هنا.</div>}
+        </>}
       </div>
       <div style={{ padding: '12px 14px 26px', display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(0,0,0,.25)' }}>
-        <div style={{ flex: 1, color: '#fff' }}><div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--latin)', fontWeight: 800, fontSize: 20 }}><Coin s={20} />{fmt(price)}</div><div style={{ fontSize: 12, color: '#9EC3FF' }}>/ 30 يوم</div></div>
-        <button className="press" onClick={() => { if (coins < price) return toast('رصيد غير كافٍ — اشحن من المحفظة'); setCoins(coins - price); setMe({ ...me, vip: lv }); toast(`تم تفعيل VIP${lv}`); }} style={{ padding: '12px 30px', borderRadius: 24, fontWeight: 800, color: '#5A3600', background: 'linear-gradient(180deg,#FFE9A0,#F0B23A)' }}>{me.vip === lv ? 'تجديد' : 'تفعيل'}</button>
+        <div style={{ flex: 1, color: '#fff' }}><div style={{ fontSize: 12, color: '#9EC3FF' }}>رصيدك الحالي: {fmt(selected?.currency === 'diamonds' ? 0 : 0)}</div><div style={{ fontSize: 11, color: '#9EC3FF' }}>الشراء يخصم من محفظتك بأمان عبر قاعدة البيانات</div></div>
+        <button disabled={!selected || busy} className="press" onClick={purchase} style={{ padding: '12px 30px', borderRadius: 24, fontWeight: 800, color: '#5A3600', background: 'linear-gradient(180deg,#FFE9A0,#F0B23A)', opacity: !selected || busy ? .5 : 1 }}>{busy ? 'جارٍ التفعيل…' : 'تفعيل VIP'}</button>
       </div>
     </div>
   );
