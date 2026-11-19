@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useRef, useState } from "react";
+import { sendPhoneOtp, verifyPhoneOtp } from "@/lib/supabase-rest";
 import { Smartphone, ArrowRight } from "lucide-react";
 import loopVideo from "@/assets/login-falcon-loop.mp4.asset.json";
 import poster from "@/assets/login-falcon-poster.jpg.asset.json";
@@ -32,10 +33,14 @@ function GoogleLogo() {
 function Login() {
   const [step, setStep] = useState<"home" | "phone" | "otp">("home");
   const [phone, setPhone] = useState("");
+  const [countryCode, setCountryCode] = useState("+20");
+  const [busy, setBusy] = useState(false);
+  const [authError, setAuthError] = useState("");
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const refs = useRef<(HTMLInputElement | null)[]>([]);
 
   const primary = "flex w-full items-center justify-center gap-3 rounded-full bg-ice-pill py-4 text-lg font-bold text-ice-pill-text ice-shadow transition active:scale-[.98] disabled:opacity-50";
+  const fullPhone = `${countryCode}${phone}`;
   const field = "rounded-2xl border border-ice-glass-border bg-ice-glass text-ice-text outline-none backdrop-blur-xl placeholder:text-ice-dim focus:border-ice-accent";
 
   return (
@@ -58,8 +63,8 @@ function Login() {
         <div key={step} className="ice-in mt-auto space-y-5">
           {step === "home" && (
             <>
-              <button className={`${primary} border border-ice-pill-border`}>
-                <GoogleLogo /> تسجيل الدخول بـ Google
+              <button onClick={() => setStep("phone")} className={`${primary} border border-ice-pill-border`}>
+                <Smartphone className="size-5" /> تسجيل الدخول برقم الهاتف
               </button>
               <div className="flex items-center gap-4 px-10 text-sm text-ice-dim">
                 <span className="h-px flex-1 bg-ice-glass-border" /> أو <span className="h-px flex-1 bg-ice-glass-border" />
@@ -82,11 +87,11 @@ function Login() {
               </button>
               <h2 className="text-xl font-bold">الدخول برقم الهاتف</h2>
               <div dir="ltr" className="flex gap-2">
-                <select className={`${field} px-3`}>
-                  <option className="bg-ice-deep">🇪🇬 +20</option>
-                  <option className="bg-ice-deep">🇸🇦 +966</option>
-                  <option className="bg-ice-deep">🇦🇪 +971</option>
-                  <option className="bg-ice-deep">🇰🇼 +965</option>
+                <select value={countryCode} onChange={(e) => setCountryCode(e.target.value)} className={`${field} px-3`}>
+                  <option value="+20" className="bg-ice-deep">🇪🇬 +20</option>
+                  <option value="+966" className="bg-ice-deep">🇸🇦 +966</option>
+                  <option value="+971" className="bg-ice-deep">🇦🇪 +971</option>
+                  <option value="+965" className="bg-ice-deep">🇰🇼 +965</option>
                 </select>
                 <input
                   inputMode="tel" value={phone} placeholder="10 1234 5678"
@@ -94,8 +99,14 @@ function Login() {
                   className={`${field} min-w-0 flex-1 px-4 py-4 text-lg tracking-wider`}
                 />
               </div>
-              <button disabled={phone.length < 8} onClick={() => setStep("otp")} className={primary}>
-                إرسال الكود
+              {authError && <p role="alert" className="text-sm text-rose-300">{authError}</p>}
+              <button disabled={phone.length < 8 || busy} onClick={async () => {
+                setBusy(true); setAuthError("");
+                try { await sendPhoneOtp(fullPhone); setStep("otp"); }
+                catch (e) { setAuthError(e instanceof Error ? e.message : "تعذر إرسال رمز التحقق."); }
+                finally { setBusy(false); }
+              }} className={primary}>
+                {busy ? "جارٍ الإرسال…" : "إرسال الكود"}
               </button>
             </div>
           )}
@@ -107,7 +118,7 @@ function Login() {
               </button>
               <h2 className="text-xl font-bold">كود التحقق</h2>
               <p className="text-sm text-ice-dim">
-                أدخل الكود المرسل إلى <bdi dir="ltr">+20 {phone}</bdi>
+                أدخل الكود المرسل إلى <bdi dir="ltr">{fullPhone}</bdi>
               </p>
               <div dir="ltr" className="flex justify-between gap-2">
                 {code.map((v, i) => (
@@ -124,9 +135,15 @@ function Login() {
                   />
                 ))}
               </div>
-              <button disabled={code.join("").length < 6} className={primary}>تأكيد والدخول</button>
+              {authError && <p role="alert" className="text-sm text-rose-300">{authError}</p>}
+              <button disabled={code.join("").length < 6 || busy} onClick={async () => {
+                setBusy(true); setAuthError("");
+                try { await verifyPhoneOtp(fullPhone, code.join("")); window.location.assign("/Frost%20Voice%20Chat.html"); }
+                catch (e) { setAuthError(e instanceof Error ? e.message : "رمز التحقق غير صحيح."); }
+                finally { setBusy(false); }
+              }} className={primary}>{busy ? "جارٍ التحقق…" : "تأكيد والدخول"}</button>
               <p className="text-center text-sm text-ice-dim">
-                لم يصلك الكود؟ <button className="font-bold text-ice-text underline">إعادة الإرسال</button>
+                لم يصلك الكود؟ <button onClick={async () => { setBusy(true); setAuthError(""); try { await sendPhoneOtp(fullPhone); } catch (e) { setAuthError(e instanceof Error ? e.message : "تعذر إعادة الإرسال."); } finally { setBusy(false); } }} className="font-bold text-ice-text underline">إعادة الإرسال</button>
               </p>
             </div>
           )}
