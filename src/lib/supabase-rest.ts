@@ -73,6 +73,10 @@ export async function upsertRow(table: string, values: unknown, onConflict: stri
   const { data } = await request(`/rest/v1/${table}?on_conflict=${encodeURIComponent(onConflict)}`, { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=representation" }, body: JSON.stringify(values) });
   return data;
 }
+export async function deleteRows(table: string, query: string) {
+  const { data } = await request(`/rest/v1/${table}?${query}`, { method: "DELETE", headers: { Prefer: "return=representation" } });
+  return data;
+}
 export async function updateRows(table: string, query: string, values: unknown) {
   const { data } = await request(`/rest/v1/${table}?${query}`, { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify(values) });
   return data;
